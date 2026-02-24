@@ -26,19 +26,12 @@ struct LoginView: View {
 
                     Spacer()
 
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 36, style: .continuous)
-                            .fill(Color.white)
-                            .shadow(color: Color.black.opacity(0.10), radius: 28, x: 0, y: 14)
-                            .shadow(color: Color.white.opacity(0.9), radius: 14, x: -10, y: -10)
-                        Image(systemName: "lock.circle.fill")
-                            .font(.system(size: 96, weight: .regular))
-                            .foregroundStyle(
-                                LinearGradient(colors: [.white, Color(.systemGray5)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                            )
-                            .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 6)
-                    }
-                    .frame(width: 200, height: 200)
+                    Image(systemName: "lock.circle.fill")
+                        .font(.system(size: 140, weight: .regular))
+                        .foregroundStyle(
+                            LinearGradient(colors: [.white, Color(.systemGray4)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
+                        .shadow(color: Color.black.opacity(0.16), radius: 18, x: 0, y: 10)
 
                     Spacer()
 
