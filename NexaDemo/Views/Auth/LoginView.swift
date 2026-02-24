@@ -1,78 +1,178 @@
 import SwiftUI
+import AuthenticationServices
 
 struct LoginView: View {
+    @Environment(AuthViewModel.self) private var authVM
+    @State private var goToEmail = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(red: 0.95, green: 0.95, blue: 0.97).ignoresSafeArea()
+
+                VStack(spacing: 24) {
+                    Spacer().frame(height: 32)
+
+                    VStack(spacing: 8) {
+                        Text("Privacy by design")
+                            .font(.system(size: 28, weight: .semibold))
+                            .foregroundColor(.black.opacity(0.85))
+                        Text("We never sell or share your information with\nthird parties.")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, 32)
+
+                    Spacer()
+
+                    Image("logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 240, height: 240)
+                        .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 10)
+
+                    Spacer()
+
+                    VStack(spacing: 14) {
+                        TermsText()
+                            .padding(.horizontal, 24)
+
+                        AppleAuthButton()
+
+                        NavigationLink(destination: EmailLoginView().environment(authVM), isActive: $goToEmail) {
+                            EmptyView()
+                        }
+                        .hidden()
+
+                        Button { goToEmail = true } label: {
+                            Text("Use email instead")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.top, 2)
+                    }
+
+                    Spacer().frame(height: 20)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Components
+
+private struct TermsText: View {
+    var body: some View {
+        VStack(spacing: 6) {
+            Text("For more details, please refer to our")
+                .font(.footnote)
+                .foregroundColor(.gray)
+            HStack(spacing: 6) {
+                Link("Terms of Service", destination: URL(string: "https://example.com/terms")!)
+                    .font(.footnote.weight(.semibold))
+                    .underline()
+                Text("and")
+                    .font(.footnote)
+                    .foregroundColor(.gray)
+                Link("Privacy Policy", destination: URL(string: "https://example.com/privacy")!)
+                    .font(.footnote.weight(.semibold))
+                    .underline()
+            }
+        }
+        .multilineTextAlignment(.center)
+    }
+}
+
+private struct AppleAuthButton: View {
+    @Environment(AuthViewModel.self) private var authVM
+
+    var body: some View {
+        SignInWithAppleButton(.continue) { _ in
+            // Request configuration left default
+        } onCompletion: { result in
+            Task { @MainActor in
+                switch result {
+                case .success(let auth):
+                    handleSuccess(auth)
+                case .failure(let error):
+                    authVM.errorMessage = error.localizedDescription
+                }
+            }
+        }
+        .signInWithAppleButtonStyle(.black)
+        .frame(height: 52)
+        .cornerRadius(26)
+        .padding(.horizontal, 24)
+        .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 8)
+    }
+
+    private func handleSuccess(_ authorization: ASAuthorization) {
+        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else { return }
+
+        let fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
+            .compactMap { $0 }
+            .joined(separator: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let email = credential.email ?? ""
+        let tokenString: String? = {
+            guard let data = credential.identityToken else { return nil }
+            return String(data: data, encoding: .utf8)
+        }()
+
+        let user = User(id: credential.user, fullName: fullName.isEmpty ? "Apple User" : fullName, email: email, isPremium: false)
+        authVM.currentUser = user
+        authVM.isLoggedIn = true
+        if let token = tokenString {
+            Task { await KeychainService.shared.saveToken(token) }
+        }
+    }
+}
+
+private struct EmailLoginView: View {
     @Environment(AuthViewModel.self) private var authVM
     @State private var email = ""
     @State private var password = ""
     @State private var showRegister = false
 
     var body: some View {
-        ZStack {
-            Color(hex: "0A0A0F").ignoresSafeArea()
+        Form {
+            Section {
+                TextField("Email", text: $email)
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.emailAddress)
+                    .autocorrectionDisabled()
+                SecureField("Password", text: $password)
+            }
 
-            VStack(spacing: 32) {
-                VStack(spacing: 8) {
-                    Text("NexaDemo")
-                        .font(.system(size: 36, weight: .bold))
-                        .foregroundColor(.white)
-                    Text("Dobrodošao nazad")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                }
-                .padding(.top, 60)
-
-                VStack(spacing: 16) {
-                    AuthTextField(
-                        placeholder: "Email",
-                        text: $email,
-                        icon: "envelope",
-                        isSecure: false,
-                        keyboardType: .emailAddress,
-                        autocapitalization: .never
-                    )
-
-                    AuthTextField(
-                        placeholder: "Password",
-                        text: $password,
-                        icon: "lock",
-                        isSecure: true
-                    )
-                }
-
-                if let error = authVM.errorMessage {
+            if let error = authVM.errorMessage {
+                Section {
                     Text(error)
                         .foregroundColor(.red)
                         .font(.caption)
-                        .multilineTextAlignment(.center)
                 }
+            }
 
+            Section {
                 Button {
                     Task { await authVM.login(email: email, password: password) }
                 } label: {
                     if authVM.isLoading {
-                        ProgressView().tint(.white)
+                        ProgressView()
                     } else {
-                        Text("Prijavi se")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 54)
+                        Text("Sign in")
+                            .fontWeight(.semibold)
                     }
                 }
-                .background(Color(hex: "E94560"))
-                .cornerRadius(14)
                 .disabled(authVM.isLoading || email.isEmpty || password.isEmpty)
 
-                Button { showRegister = true } label: {
-                    Text("Nemaš račun? Registriraj se")
-                        .foregroundColor(Color(hex: "0F3460"))
-                        .font(.subheadline)
+                Button("Create account") {
+                    showRegister = true
                 }
-
-                Spacer()
             }
-            .padding(.horizontal, 24)
         }
+        .navigationTitle("Use email")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showRegister) {
             RegisterView()
                 .environment(authVM)
