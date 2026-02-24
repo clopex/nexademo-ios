@@ -1,32 +1,19 @@
-//
-//  NexaDemoApp.swift
-//  NexaDemo
-//
-//  Created by Adis Mulabdic on 24. 2. 2026..
-//
-
 import SwiftUI
-import SwiftData
 
 @main
 struct NexaDemoApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    @State private var authVM = AuthViewModel()
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            Group {
+                if authVM.isLoggedIn {
+                    HomeView()
+                } else {
+                    LoginView()
+                }
+            }
+            .environment(authVM)
         }
-        .modelContainer(sharedModelContainer)
     }
 }
