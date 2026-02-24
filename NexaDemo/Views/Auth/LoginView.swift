@@ -29,7 +29,7 @@ struct LoginView: View {
                     Image("logo")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 240, height: 240)
+                        .frame(width: 200, height: 200)
                         .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 10)
 
                     Spacer()
@@ -67,17 +67,19 @@ private struct TermsText: View {
         VStack(spacing: 6) {
             Text("For more details, please refer to our")
                 .font(.footnote)
-                .foregroundColor(.gray)
+                .foregroundColor(.black)
             HStack(spacing: 6) {
                 Link("Terms of Service", destination: URL(string: "https://example.com/terms")!)
                     .font(.footnote.weight(.semibold))
                     .underline()
+                    .foregroundColor(.black)
                 Text("and")
                     .font(.footnote)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.black)
                 Link("Privacy Policy", destination: URL(string: "https://example.com/privacy")!)
                     .font(.footnote.weight(.semibold))
                     .underline()
+                    .foregroundColor(.black)
             }
         }
         .multilineTextAlignment(.center)
@@ -89,7 +91,7 @@ private struct AppleAuthButton: View {
 
     var body: some View {
         SignInWithAppleButton(.continue) { _ in
-            // Request configuration left default
+            authVM.errorMessage = nil
         } onCompletion: { result in
             Task { @MainActor in
                 switch result {
