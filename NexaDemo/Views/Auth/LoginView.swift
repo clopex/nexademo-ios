@@ -26,7 +26,7 @@ struct LoginView: View {
 
                     Spacer()
 
-                    Image("logo")
+                    Image("logo2")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 200, height: 200)
@@ -173,4 +173,9 @@ private struct EmailLoginView: View {
                 .environment(authVM)
         }
     }
+}
+
+#Preview {
+    LoginView()
+        .environment(AuthViewModel())
 }
