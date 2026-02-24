@@ -8,9 +8,9 @@ struct LoginView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.95, green: 0.95, blue: 0.97).ignoresSafeArea()
+                Color("Background").ignoresSafeArea()
 
-                VStack(spacing: 24) {
+                VStack(spacing: 0) {
                     Spacer().frame(height: 32)
 
                     VStack(spacing: 8) {
@@ -30,11 +30,11 @@ struct LoginView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 200, height: 200)
-                        .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 10)
+                        .shadow(color: Color.black.opacity(0.18), radius: 24, x: 0, y: 12)
 
                     Spacer()
 
-                    VStack(spacing: 14) {
+                    VStack(spacing: 8) {
                         TermsText()
                             .padding(.horizontal, 24)
 
@@ -50,10 +50,9 @@ struct LoginView: View {
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundColor(.gray)
                         }
-                        .padding(.top, 2)
+                        .padding(.top, 4)
                     }
-
-                    Spacer().frame(height: 20)
+                    .padding(.bottom, 24)
                 }
             }
         }
@@ -117,16 +116,10 @@ private struct AppleAuthButton: View {
             .joined(separator: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let email = credential.email ?? ""
-        let tokenString: String? = {
-            guard let data = credential.identityToken else { return nil }
-            return String(data: data, encoding: .utf8)
-        }()
+        let name = fullName.isEmpty ? nil : fullName
 
-        let user = User(id: credential.user, fullName: fullName.isEmpty ? "Apple User" : fullName, email: email, isPremium: false)
-        authVM.currentUser = user
-        authVM.isLoggedIn = true
-        if let token = tokenString {
-            Task { await KeychainService.shared.saveToken(token) }
+        Task {
+            await authVM.appleLogin(appleId: credential.user, email: email.isEmpty ? nil : email, fullName: name)
         }
     }
 }
