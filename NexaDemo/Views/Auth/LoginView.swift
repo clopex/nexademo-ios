@@ -3,13 +3,21 @@ import SwiftUI
 struct LoginView: View {
     @Environment(AuthViewModel.self) private var authVM
     @Environment(\.dismiss) private var dismiss
+
     @State private var email = ""
     @State private var password = ""
     @State private var isSecure = true
+    @State private var stage: Stage = .email
     @FocusState private var focusField: Field?
 
+    private enum Stage {
+        case email
+        case password
+    }
+
     private enum Field: Hashable {
-        case email, password
+        case email
+        case password
     }
 
     var body: some View {
@@ -25,7 +33,7 @@ struct LoginView: View {
                         .font(.title2.bold())
                         .foregroundStyle(.black.opacity(0.85))
 
-                    VStack(spacing: 14) {
+                    ZStack {
                         underlinedField(
                             placeholder: "john.smith@gmail.com",
                             text: $email,
@@ -33,6 +41,8 @@ struct LoginView: View {
                             showsEye: false,
                             focus: .email
                         )
+                        .opacity(stage == .email ? 1 : 0)
+                        .offset(x: stage == .email ? 0 : -120)
 
                         underlinedField(
                             placeholder: "Password",
@@ -42,7 +52,10 @@ struct LoginView: View {
                             toggleSecure: { isSecure.toggle() },
                             focus: .password
                         )
+                        .opacity(stage == .password ? 1 : 0)
+                        .offset(x: stage == .password ? 0 : 120)
                     }
+                    .animation(.easeInOut(duration: 0.25), value: stage)
                 }
                 Spacer()
 
@@ -56,9 +69,9 @@ struct LoginView: View {
                 }
 
                 Button {
-                    Task { await authVM.login(email: email, password: password) }
+                    advance()
                 } label: {
-                    Text("Continue")
+                    Text(buttonTitle)
                         .font(.headline)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -74,22 +87,64 @@ struct LoginView: View {
         .task {
             if email.isEmpty { focusField = .email }
         }
+        .task(id: stage) {
+            switch stage {
+            case .email:
+                focusField = email.isEmpty ? .email : nil
+            case .password:
+                focusField = password.isEmpty ? .password : nil
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("Back", systemImage: "chevron.left") {
-                    dismiss()
+                Button(action: goBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.black)
+                        .frame(width: 24, height: 24)
+                        .padding(12)
+                        .background(Color.white)
+                        .clipShape(.circle)
                 }
-                .labelStyle(.iconOnly)
+                .buttonStyle(.plain)
             }
         }
     }
 
+    private var buttonTitle: String {
+        stage == .password ? "Login" : "Continue"
+    }
+
     private var isContinueDisabled: Bool {
-        authVM.isLoading || !isValidEmail(email) || password.isEmpty
+        switch stage {
+        case .email:
+            return authVM.isLoading || !isValidEmail(email)
+        case .password:
+            return authVM.isLoading || password.isEmpty || !isValidEmail(email)
+        }
     }
 
     private var buttonColor: Color {
         isContinueDisabled ? .gray.opacity(0.5) : .black
+    }
+
+    private func advance() {
+        switch stage {
+        case .email:
+            withAnimation(.easeInOut(duration: 0.25)) { stage = .password }
+        case .password:
+            Task { await authVM.login(email: email, password: password) }
+        }
+    }
+
+    private func goBack() {
+        switch stage {
+        case .email:
+            dismiss()
+        case .password:
+            focusField = nil
+            withAnimation(.easeInOut(duration: 0.25)) { stage = .email }
+        }
     }
 
     @ViewBuilder
