@@ -133,4 +133,5 @@ private struct AppleAuthButton: View {
     RegisterLandingView()
         .environment(AuthViewModel())
         .environment(AuthRouter())
+        .environment(AppSheetManager())
 }
