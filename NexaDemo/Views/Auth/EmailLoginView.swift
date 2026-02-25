@@ -204,6 +204,17 @@ struct EmailLoginView: View {
         }
     }
 
+    private func goBack() {
+        switch stage {
+        case .email:
+            dismiss()
+        case .password:
+            withAnimation(.easeInOut(duration: 0.25)) { stage = .email }
+        case .confirm:
+            withAnimation(.easeInOut(duration: 0.25)) { stage = .password }
+        }
+    }
+
     private func isValidEmail(_ text: String) -> Bool {
         guard !text.isEmpty else { return false }
         let pattern = #"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$"#
