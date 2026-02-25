@@ -115,7 +115,7 @@ struct EmailLoginView: View {
     }
 
     @ViewBuilder
-    private func underlinedField(placeholder: String, text: Binding<String>, isSecure: Bool) -> some View {
+    private func underlinedField(placeholder: String, text: Binding<String>, isSecure: Bool, showsEye: Bool = false) -> some View {
         VStack(spacing: 10) {
             HStack {
                 ZStack(alignment: .leading) {
@@ -135,6 +135,14 @@ struct EmailLoginView: View {
                             .keyboardType(.emailAddress)
                             .autocorrectionDisabled()
                             .multilineTextAlignment(.center)
+                    }
+                }
+                if showsEye {
+                    Button {
+                        self.isSecure.toggle()
+                    } label: {
+                        Image(systemName: isSecure ? "eye.slash" : "eye")
+                            .foregroundColor(.gray)
                     }
                 }
             }
