@@ -11,19 +11,19 @@ struct HomeView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Dobrodošao,")
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.gray)
                             .font(.subheadline)
 
                         Text(authVM.currentUser?.fullName ?? "Korisnik")
-                            .foregroundColor(.white)
-                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(.white)
+                            .font(.title3.bold())
                     }
 
                     Spacer()
 
                     Button { authVM.logout() } label: {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.gray)
                             .font(.title2)
                     }
                 }
@@ -36,10 +36,10 @@ struct HomeView: View {
                     .overlay(
                         VStack {
                             Text("✅ Backend Connected")
-                                .foregroundColor(.green)
+                                .foregroundStyle(.green)
                                 .font(.headline)
                             Text(authVM.currentUser?.email ?? "")
-                                .foregroundColor(.gray)
+                                .foregroundStyle(.gray)
                                 .font(.caption)
                         }
                     )

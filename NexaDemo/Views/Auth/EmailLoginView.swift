@@ -27,7 +27,7 @@ struct EmailLoginView: View {
                 VStack(spacing: 24) {
                     Text(title)
                         .font(.title3.weight(.semibold))
-                        .foregroundColor(.black.opacity(0.85))
+                        .foregroundStyle(.black.opacity(0.85))
 
                     ZStack {
                         underlinedField(
@@ -65,7 +65,7 @@ struct EmailLoginView: View {
 
                 if let error = authVM.errorMessage {
                     Text(error)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                         .font(.caption)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
@@ -77,11 +77,11 @@ struct EmailLoginView: View {
                 } label: {
                     Text(buttonTitle)
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
                         .background(buttonColor)
-                        .cornerRadius(28)
+                        .clipShape(.rect(cornerRadius: 28))
                 }
                 .disabled(isContinueDisabled)
                 .padding(.horizontal, 24)
@@ -176,7 +176,7 @@ struct EmailLoginView: View {
                 if showsEye, let toggleSecure {
                     Button(action: toggleSecure) {
                         Image(systemName: isSecure ? "eye.slash" : "eye")
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.gray)
                     }
                 }
             }

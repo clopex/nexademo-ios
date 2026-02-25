@@ -15,11 +15,11 @@ struct LoginView: View {
 
                     VStack(spacing: 8) {
                         Text("Privacy by design")
-                            .font(.system(size: 28, weight: .semibold))
-                            .foregroundColor(.black.opacity(0.85))
+                            .font(.title2.bold())
+                            .foregroundStyle(.black.opacity(0.85))
                         Text("We never sell or share your information with\nthird parties.")
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.gray)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.horizontal, 32)
@@ -27,7 +27,9 @@ struct LoginView: View {
                     Spacer()
 
                     Image(systemName: "lock.circle.fill")
-                        .font(.system(size: 200, weight: .regular))
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 160, height: 160)
                         .foregroundStyle(
                             LinearGradient(colors: [.white, Color(.systemGray4)], startPoint: .topLeading, endPoint: .bottomTrailing)
                         )
@@ -49,7 +51,7 @@ struct LoginView: View {
                         Button { goToEmail = true } label: {
                             Text("Use email instead")
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundColor(.black.opacity(0.6))
+                                .foregroundStyle(.black.opacity(0.6))
                         }
                         .padding(.top, 4)
                     }
@@ -66,19 +68,19 @@ private struct TermsText: View {
         VStack(spacing: 6) {
             Text("For more details, please refer to our")
                 .font(.footnote)
-                .foregroundColor(.black)
+                .foregroundStyle(.black)
             HStack(spacing: 6) {
                 Link("Terms of Service", destination: URL(string: "https://example.com/terms")!)
                     .font(.footnote.weight(.semibold))
                     .underline()
-                    .foregroundColor(.black)
+                    .foregroundStyle(.black)
                 Text("and")
                     .font(.footnote)
-                    .foregroundColor(.black)
+                    .foregroundStyle(.black)
                 Link("Privacy Policy", destination: URL(string: "https://example.com/privacy")!)
                     .font(.footnote.weight(.semibold))
                     .underline()
-                    .foregroundColor(.black)
+                    .foregroundStyle(.black)
             }
         }
         .multilineTextAlignment(.center)
@@ -103,7 +105,7 @@ private struct AppleAuthButton: View {
         }
         .signInWithAppleButtonStyle(.black)
         .frame(height: 52)
-        .cornerRadius(26)
+        .clipShape(.rect(cornerRadius: 26))
         .padding(.horizontal, 24)
         .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 8)
     }

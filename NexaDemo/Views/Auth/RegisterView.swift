@@ -15,15 +15,15 @@ struct RegisterView: View {
                 HStack {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark")
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .padding()
                     }
                     Spacer()
                 }
 
                 Text("Kreiraj račun")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
+                    .font(.title2.bold())
+                    .foregroundStyle(.white)
 
                 VStack(spacing: 14) {
                     AuthTextField(
@@ -54,7 +54,7 @@ struct RegisterView: View {
 
                 if let error = authVM.errorMessage {
                     Text(error)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                         .font(.caption)
                 }
 
@@ -66,13 +66,13 @@ struct RegisterView: View {
                     } else {
                         Text("Registriraj se")
                             .font(.headline)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 54)
                     }
                 }
                 .background(Color(hex: "E94560"))
-                .cornerRadius(14)
+                .clipShape(.rect(cornerRadius: 14))
                 .disabled(authVM.isLoading || fullName.isEmpty || email.isEmpty || password.isEmpty)
 
                 Spacer()

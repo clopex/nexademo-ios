@@ -12,18 +12,18 @@ struct AuthTextField: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(.gray)
+                .foregroundStyle(.gray)
                 .frame(width: 20)
 
             if isSecure {
                 SecureField(placeholder, text: $text)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .textInputAutocapitalization(autocapitalization)
                     .autocorrectionDisabled()
                     .textContentType(.password)
             } else {
                 TextField(placeholder, text: $text)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .keyboardType(keyboardType)
                     .textInputAutocapitalization(autocapitalization)
                     .autocorrectionDisabled()
@@ -31,10 +31,10 @@ struct AuthTextField: View {
         }
         .padding(16)
         .background(Color(hex: "1A1A2E"))
-        .cornerRadius(12)
-        .overlay(
+        .clipShape(.rect(cornerRadius: 12))
+        .overlay {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-        )
+        }
     }
 }
