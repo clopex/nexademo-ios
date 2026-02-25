@@ -16,12 +16,12 @@ struct EmailLoginView: View {
                 Spacer().frame(height: 12)
 
                 Spacer()
-                VStack(spacing: 28) {
+                VStack(spacing: 24) {
                     Text("What is your email address?")
                         .font(.title3.weight(.semibold))
                         .foregroundColor(.black.opacity(0.85))
 
-                    VStack(spacing: 22) {
+                    VStack(spacing: 14) {
                         underlinedField(
                             placeholder: "john.smith@gmail.com",
                             text: $email,
@@ -121,7 +121,7 @@ struct EmailLoginView: View {
                     }
                 }
             }
-            .frame(height: 48)
+            .frame(height: 40)
             Rectangle()
                 .fill(Color.gray.opacity(0.25))
                 .frame(height: 1)
