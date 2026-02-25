@@ -75,7 +75,7 @@ struct EmailLoginView: View {
                 Button {
                     advance()
                 } label: {
-                    Text("Continue")
+                    Text(buttonTitle)
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -122,6 +122,15 @@ struct EmailLoginView: View {
 
     private var buttonColor: Color {
         isContinueDisabled ? Color.gray.opacity(0.5) : Color.black
+    }
+
+    private var buttonTitle: String {
+        switch stage {
+        case .email, .password:
+            return "Continue"
+        case .confirm:
+            return "Register"
+        }
     }
 
     private var isContinueDisabled: Bool {
