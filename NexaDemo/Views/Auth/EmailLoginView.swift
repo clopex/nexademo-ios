@@ -5,7 +5,9 @@ struct EmailLoginView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var email = ""
     @State private var showRegister = false
-    @State private var goToPassword = false
+    @State private var isPasswordStage = false
+    @State private var password = ""
+    @State private var isSecure = true
 
     var body: some View {
         ZStack {
@@ -16,17 +18,29 @@ struct EmailLoginView: View {
 
                 Spacer()
                 VStack(spacing: 24) {
-                    Text("What is your email address?")
+                    Text(isPasswordStage ? "Enter your password" : "What is your email address?")
                         .font(.title3.weight(.semibold))
                         .foregroundColor(.black.opacity(0.85))
 
-                    VStack(spacing: 14) {
+                    ZStack {
                         underlinedField(
                             placeholder: "john.smith@gmail.com",
                             text: $email,
                             isSecure: false
                         )
+                        .opacity(isPasswordStage ? 0 : 1)
+                        .offset(x: isPasswordStage ? -120 : 0)
+
+                        underlinedField(
+                            placeholder: "Password",
+                            text: $password,
+                            isSecure: isSecure,
+                            showsEye: true
+                        )
+                        .opacity(isPasswordStage ? 1 : 0)
+                        .offset(x: isPasswordStage ? 0 : 120)
                     }
+                    .animation(.easeInOut(duration: 0.25), value: isPasswordStage)
                 }
                 Spacer()
 
@@ -39,14 +53,14 @@ struct EmailLoginView: View {
                         .padding(.bottom, 8)
                 }
 
-                NavigationLink(isActive: $goToPassword) {
-                    PasswordLoginView(email: email)
-                        .environment(authVM)
-                } label: { EmptyView() }
-                .hidden()
-
                 Button {
-                    goToPassword = true
+                    if isPasswordStage {
+                        Task { await authVM.login(email: email, password: password) }
+                    } else {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            isPasswordStage = true
+                        }
+                    }
                 } label: {
                     Text("Continue")
                         .font(.headline)
@@ -56,14 +70,22 @@ struct EmailLoginView: View {
                         .background(buttonColor)
                         .cornerRadius(28)
                 }
-                .disabled(authVM.isLoading || email.isEmpty)
+                .disabled(isContinueDisabled)
                 .padding(.horizontal, 24)
                 .padding(.bottom, 28)
             }
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button { dismiss() } label: {
+                Button {
+                    if isPasswordStage {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            isPasswordStage = false
+                        }
+                    } else {
+                        dismiss()
+                    }
+                } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.black)
@@ -82,9 +104,14 @@ struct EmailLoginView: View {
     }
 
     private var buttonColor: Color {
-        (authVM.isLoading || email.isEmpty)
-        ? Color.gray.opacity(0.5)
-        : Color.black
+        isContinueDisabled ? Color.gray.opacity(0.5) : Color.black
+    }
+
+    private var isContinueDisabled: Bool {
+        if isPasswordStage {
+            return authVM.isLoading || password.isEmpty
+        }
+        return authVM.isLoading || email.isEmpty
     }
 
     @ViewBuilder
