@@ -27,13 +27,6 @@ struct EmailLoginView: View {
                             text: $email,
                             isSecure: false
                         )
-
-                        underlinedField(
-                            placeholder: "Password",
-                            text: $password,
-                            isSecure: isSecure,
-                            showsEye: true
-                        )
                     }
                 }
                 Spacer()
@@ -58,7 +51,7 @@ struct EmailLoginView: View {
                         .background(buttonColor)
                         .cornerRadius(28)
                 }
-                .disabled(authVM.isLoading || email.isEmpty || password.isEmpty)
+                .disabled(authVM.isLoading || email.isEmpty)
                 .padding(.horizontal, 24)
                 .padding(.bottom, 28)
             }
