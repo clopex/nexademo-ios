@@ -8,6 +8,10 @@ struct EmailLoginView: View {
         case email, password, confirm
     }
     
+    private enum Field: Hashable {
+        case email, password, confirm
+    }
+    
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
@@ -15,6 +19,7 @@ struct EmailLoginView: View {
     @State private var isSecureConfirm = true
     @State private var showRegister = false
     @State private var stage: Stage = .email
+    @FocusState private var focusField: Field?
 
     var body: some View {
         ZStack {
