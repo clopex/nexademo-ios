@@ -41,7 +41,9 @@ struct LoginView: View {
 
                     AppleAuthButton()
 
-                    NavigationLink(value: AuthRoute.emailLogin) {
+                    Button {
+                        authRouter.push(.emailLogin)
+                    } label: {
                         Text("Use email instead")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.black.opacity(0.6))
