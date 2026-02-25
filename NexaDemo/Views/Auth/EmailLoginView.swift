@@ -124,12 +124,12 @@ struct EmailLoginView: View {
         .task(id: stage) {
             switch stage {
             case .email:
-                if email.isEmpty { focusField = .email }
+                focusField = email.isEmpty ? .email : nil
             case .password:
-                if password.isEmpty { focusField = .password }
+                focusField = password.isEmpty ? .password : nil
             case .confirm:
                 confirmPassword = ""
-                if confirmPassword.isEmpty { focusField = .confirm }
+                focusField = confirmPassword.isEmpty ? .confirm : nil
             }
         }
     }
@@ -243,8 +243,10 @@ struct EmailLoginView: View {
         case .email:
             dismiss()
         case .password:
+            focusField = nil
             withAnimation(.easeInOut(duration: 0.25)) { stage = .email }
         case .confirm:
+            focusField = nil
             withAnimation(.easeInOut(duration: 0.25)) {
                 confirmPassword = ""
                 stage = .password
