@@ -88,25 +88,7 @@ struct EmailLoginView: View {
                 .padding(.bottom, 28)
             }
         }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    goBack()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.black)
-                        .padding(12)
-                        .background(
-                            Circle()
-                                .fill(Color.white)
-                                .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 4)
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .navigationBarBackButtonHidden(true)
+        .navigationBarBackButtonHidden(false)
         .sheet(isPresented: $showRegister) {
             RegisterView()
                 .environment(authVM)
@@ -202,17 +184,6 @@ struct EmailLoginView: View {
             withAnimation(.easeInOut(duration: 0.25)) { stage = .confirm }
         case .confirm:
             Task { await authVM.login(email: email, password: password) }
-        }
-    }
-
-    private func goBack() {
-        switch stage {
-        case .email:
-            dismiss()
-        case .password:
-            withAnimation(.easeInOut(duration: 0.25)) { stage = .email }
-        case .confirm:
-            withAnimation(.easeInOut(duration: 0.25)) { stage = .password }
         }
     }
 
