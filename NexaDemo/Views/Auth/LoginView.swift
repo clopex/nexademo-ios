@@ -1,128 +1,156 @@
 import SwiftUI
-import AuthenticationServices
 
 struct LoginView: View {
     @Environment(AuthViewModel.self) private var authVM
-    @Environment(AuthRouter.self) private var authRouter
+    @Environment(\.dismiss) private var dismiss
+    @State private var email = ""
+    @State private var password = ""
+    @State private var isSecure = true
+    @FocusState private var focusField: Field?
+
+    private enum Field: Hashable {
+        case email, password
+    }
 
     var body: some View {
         ZStack {
             Color("Background").ignoresSafeArea()
 
             VStack(spacing: 0) {
-                Spacer().frame(height: 80)
+                Spacer().frame(height: 24)
 
-                VStack(spacing: 8) {
-                    Text("Privacy by design")
+                Spacer()
+                VStack(spacing: 24) {
+                    Text("Log in")
                         .font(.title2.bold())
                         .foregroundStyle(.black.opacity(0.85))
-                    Text("We never sell or share your information with\nthird parties.")
-                        .font(.subheadline)
-                        .foregroundStyle(.gray)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, 32)
 
-                Spacer()
+                    VStack(spacing: 14) {
+                        underlinedField(
+                            placeholder: "john.smith@gmail.com",
+                            text: $email,
+                            isSecure: false,
+                            showsEye: false,
+                            focus: .email
+                        )
 
-                Image(systemName: "lock.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 160, height: 160)
-                    .foregroundStyle(
-                        LinearGradient(colors: [.white, Color(.systemGray4)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    )
-                    .shadow(color: Color.black.opacity(0.16), radius: 10, x: 0, y: 0)
-
-                Spacer()
-
-                VStack(spacing: 8) {
-                    TermsText()
-                        .padding([.horizontal, .bottom], 24)
-
-                    AppleAuthButton()
-
-                    Button {
-                        authRouter.push(.emailLogin)
-                    } label: {
-                        Text("Use email instead")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.black.opacity(0.6))
+                        underlinedField(
+                            placeholder: "Password",
+                            text: $password,
+                            isSecure: isSecure,
+                            showsEye: true,
+                            toggleSecure: { isSecure.toggle() },
+                            focus: .password
+                        )
                     }
-                    .padding(.top, 4)
+                }
+                Spacer()
+
+                if let error = authVM.errorMessage {
+                    Text(error)
+                        .foregroundStyle(.red)
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 8)
+                }
+
+                Button {
+                    Task { await authVM.login(email: email, password: password) }
+                } label: {
+                    Text("Continue")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(buttonColor)
+                        .clipShape(.rect(cornerRadius: 28))
+                }
+                .disabled(isContinueDisabled)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 28)
+            }
+        }
+        .task {
+            if email.isEmpty { focusField = .email }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Back", systemImage: "chevron.left") {
+                    dismiss()
+                }
+                .labelStyle(.iconOnly)
+            }
+        }
+    }
+
+    private var isContinueDisabled: Bool {
+        authVM.isLoading || !isValidEmail(email) || password.isEmpty
+    }
+
+    private var buttonColor: Color {
+        isContinueDisabled ? .gray.opacity(0.5) : .black
+    }
+
+    @ViewBuilder
+    private func underlinedField(
+        placeholder: String,
+        text: Binding<String>,
+        isSecure: Bool,
+        showsEye: Bool = false,
+        toggleSecure: (() -> Void)? = nil,
+        focus: Field
+    ) -> some View {
+        VStack(spacing: 10) {
+            HStack {
+                ZStack(alignment: .leading) {
+                    if text.wrappedValue.isEmpty {
+                        Text(placeholder)
+                            .foregroundStyle(.gray.opacity(0.4))
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                    if isSecure {
+                        SecureField("", text: text)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .multilineTextAlignment(.center)
+                            .focused($focusField, equals: focus)
+                    } else {
+                        TextField("", text: text)
+                            .textInputAutocapitalization(.never)
+                            .keyboardType(.emailAddress)
+                            .autocorrectionDisabled()
+                            .multilineTextAlignment(.center)
+                            .focused($focusField, equals: focus)
+                    }
+                }
+                if showsEye, let toggleSecure {
+                    Button(action: toggleSecure) {
+                        Image(systemName: isSecure ? "eye.slash" : "eye")
+                            .foregroundStyle(.gray)
+                    }
                 }
             }
+            .frame(height: 40)
+            Rectangle()
+                .fill(Color.gray.opacity(0.25))
+                .frame(height: 1)
         }
-    }
-}
-
-// MARK: - Components
-
-private struct TermsText: View {
-    var body: some View {
-        VStack(spacing: 6) {
-            Text("For more details, please refer to our")
-                .font(.footnote)
-                .foregroundStyle(.black)
-            HStack(spacing: 6) {
-                Link("Terms of Service", destination: URL(string: "https://example.com/terms")!)
-                    .font(.footnote.weight(.semibold))
-                    .underline()
-                    .foregroundStyle(.black)
-                Text("and")
-                    .font(.footnote)
-                    .foregroundStyle(.black)
-                Link("Privacy Policy", destination: URL(string: "https://example.com/privacy")!)
-                    .font(.footnote.weight(.semibold))
-                    .underline()
-                    .foregroundStyle(.black)
-            }
-        }
-        .multilineTextAlignment(.center)
-    }
-}
-
-private struct AppleAuthButton: View {
-    @Environment(AuthViewModel.self) private var authVM
-
-    var body: some View {
-        SignInWithAppleButton(.continue) { _ in
-            authVM.errorMessage = nil
-        } onCompletion: { result in
-            Task { @MainActor in
-                switch result {
-                case .success(let auth):
-                    handleSuccess(auth)
-                case .failure(let error):
-                    authVM.errorMessage = error.localizedDescription
-                }
-            }
-        }
-        .signInWithAppleButtonStyle(.black)
-        .frame(height: 52)
-        .clipShape(.rect(cornerRadius: 26))
-        .padding(.horizontal, 24)
-        .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 8)
+        .font(.title3.bold())
+        .padding(.horizontal, 32)
     }
 
-    private func handleSuccess(_ authorization: ASAuthorization) {
-        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else { return }
-
-        let fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
-            .compactMap { $0 }
-            .joined(separator: " ")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let email = credential.email ?? ""
-        let name = fullName.isEmpty ? nil : fullName
-
-        Task {
-            await authVM.appleLogin(appleId: credential.user, email: email.isEmpty ? nil : email, fullName: name)
-        }
+    private func isValidEmail(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let pattern = #"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$"#
+        return NSPredicate(format: "SELF MATCHES[c] %@", pattern).evaluate(with: trimmed)
     }
 }
 
 #Preview {
-    LoginView()
-        .environment(AuthViewModel())
-        .environment(AuthRouter())
+    NavigationStack {
+        LoginView()
+            .environment(AuthViewModel())
+    }
 }

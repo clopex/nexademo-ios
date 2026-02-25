@@ -6,6 +6,7 @@ enum AuthRoute: Hashable {
     case register
     case forgotPassword
     case emailLogin
+    case login
 }
 
 enum HomeRoute: Hashable {
@@ -126,12 +127,13 @@ struct AuthFlowView: View {
 
     var body: some View {
         NavigationStack(path: $router.path) {
-            LoginView()
+            RegisterLandingView()
                 .navigationDestination(for: AuthRoute.self) { route in
                     switch route {
                     case .register: RegisterView()
                     case .forgotPassword: ForgotPasswordView()
                     case .emailLogin: EmailLoginView()
+                    case .login: LoginView()
                     }
                 }
         }
