@@ -27,11 +27,11 @@ struct LoginView: View {
                     Spacer()
 
                     Image(systemName: "lock.circle.fill")
-                        .font(.system(size: 140, weight: .regular))
+                        .font(.system(size: 200, weight: .regular))
                         .foregroundStyle(
                             LinearGradient(colors: [.white, Color(.systemGray4)], startPoint: .topLeading, endPoint: .bottomTrailing)
                         )
-                        .shadow(color: Color.black.opacity(0.16), radius: 18, x: 0, y: 10)
+                        .shadow(color: Color.black.opacity(0.16), radius: 10, x: 0, y: 0)
 
                     Spacer()
 
@@ -126,52 +126,118 @@ private struct AppleAuthButton: View {
 
 private struct EmailLoginView: View {
     @Environment(AuthViewModel.self) private var authVM
+    @Environment(\.dismiss) private var dismiss
     @State private var email = ""
     @State private var password = ""
+    @State private var isSecure = true
     @State private var showRegister = false
 
     var body: some View {
-        Form {
-            Section {
-                TextField("Email", text: $email)
-                    .textInputAutocapitalization(.never)
-                    .keyboardType(.emailAddress)
-                    .autocorrectionDisabled()
-                SecureField("Password", text: $password)
-            }
+        ZStack {
+            Color("Background").ignoresSafeArea()
 
-            if let error = authVM.errorMessage {
-                Section {
+            VStack(spacing: 32) {
+                Spacer()
+                VStack(spacing: 20) {
+                    Text("What is your email address?")
+                        .font(.title3.weight(.semibold))
+                        .foregroundColor(.black.opacity(0.8))
+
+                    VStack(spacing: 16) {
+                        underlinedField(
+                            placeholder: "john.smith@gmail.com",
+                            text: $email,
+                            isSecure: false
+                        )
+
+                        underlinedField(
+                            placeholder: "Password",
+                            text: $password,
+                            isSecure: isSecure,
+                            showsEye: true
+                        )
+                    }
+                }
+                Spacer()
+
+                if let error = authVM.errorMessage {
                     Text(error)
                         .foregroundColor(.red)
                         .font(.caption)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
                 }
-            }
 
-            Section {
                 Button {
                     Task { await authVM.login(email: email, password: password) }
                 } label: {
-                    if authVM.isLoading {
-                        ProgressView()
-                    } else {
-                        Text("Sign in")
-                            .fontWeight(.semibold)
-                    }
+                    Text("Continue")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 54)
+                        .background(buttonColor)
+                        .cornerRadius(27)
                 }
                 .disabled(authVM.isLoading || email.isEmpty || password.isEmpty)
-
-                Button("Create account") {
-                    showRegister = true
+                .padding(.horizontal, 24)
+                .padding(.bottom, 20)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.black)
+                        .frame(width: 44, height: 44)
+                        .background(.white)
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 4)
                 }
             }
         }
-        .navigationTitle("Use email")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .sheet(isPresented: $showRegister) {
             RegisterView()
                 .environment(authVM)
         }
+    }
+
+    private var buttonColor: Color {
+        (authVM.isLoading || email.isEmpty || password.isEmpty)
+        ? Color.gray.opacity(0.5)
+        : Color.black
+    }
+
+    @ViewBuilder
+    private func underlinedField(placeholder: String, text: Binding<String>, isSecure: Bool, showsEye: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                if isSecure {
+                    SecureField(placeholder, text: text)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                } else {
+                    TextField(placeholder, text: text)
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.emailAddress)
+                        .autocorrectionDisabled()
+                }
+                if showsEye {
+                    Button {
+                        isSecure ? (self.isSecure = false) : (self.isSecure = true)
+                    } label: {
+                        Image(systemName: isSecure ? "eye.slash" : "eye")
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+            Rectangle()
+                .fill(Color.gray.opacity(0.25))
+                .frame(height: 1)
+        }
+        .padding(.horizontal, 32)
     }
 }
 
