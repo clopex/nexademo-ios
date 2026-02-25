@@ -9,8 +9,6 @@ enum AuthRoute: Hashable {
 }
 
 enum HomeRoute: Hashable {
-    case profile
-    case settings
     case notifications
 }
 
@@ -19,14 +17,19 @@ enum AIRoute: Hashable {
     case chat
 }
 
-enum PaymentRoute: Hashable {
-    case paywall
+enum PremiumRoute: Hashable {
     case transactionHistory
+}
+
+enum ConnectRoute: Hashable {
+    case contactDetail(String)
+    case activeCall(String)
 }
 
 enum ProfileRoute: Hashable {
     case editProfile
     case settings
+    case voiceNotes
 }
 
 // MARK: - Sheets & Full Screen
@@ -41,6 +44,7 @@ enum AppSheet: Identifiable {
 enum AppFullScreen: Identifiable {
     case camera
     case onboarding
+    case videoCall(String)
     var id: String { String(describing: self) }
 }
 
@@ -75,9 +79,18 @@ final class AIRouter {
 
 @MainActor
 @Observable
-final class PaymentRouter {
+final class PremiumRouter {
     var path = NavigationPath()
-    func push(_ route: PaymentRoute) { path.append(route) }
+    func push(_ route: PremiumRoute) { path.append(route) }
+    func pop() { path.removeLast() }
+    func popToRoot() { path.removeLast(path.count) }
+}
+
+@MainActor
+@Observable
+final class ConnectRouter {
+    var path = NavigationPath()
+    func push(_ route: ConnectRoute) { path.append(route) }
     func pop() { path.removeLast() }
     func popToRoot() { path.removeLast(path.count) }
 }
@@ -130,6 +143,7 @@ struct RootView: View {
             switch screen {
             case .camera: CameraView()
             case .onboarding: OnboardingView()
+            case .videoCall(let channel): VideoCallView(channel: channel)
             }
         }
         .environment(authVM)
@@ -147,12 +161,9 @@ struct AuthFlowView: View {
             LoginView()
                 .navigationDestination(for: AuthRoute.self) { route in
                     switch route {
-                    case .register:
-                        RegisterView()
-                    case .forgotPassword:
-                        ForgotPasswordView()
-                    case .emailLogin:
-                        EmailLoginView()
+                    case .register: RegisterView()
+                    case .forgotPassword: ForgotPasswordView()
+                    case .emailLogin: EmailLoginView()
                     }
                 }
         }
@@ -166,32 +177,32 @@ struct MainTabView: View {
     var body: some View {
         TabView {
             HomeFlowView()
-                .tabItem { Label("Home", systemImage: "house") }
+                .tabItem { Label("Home", systemImage: "house.fill") }
 
             AIFlowView()
                 .tabItem { Label("AI Studio", systemImage: "camera.viewfinder") }
 
-            PaymentFlowView()
-                .tabItem { Label("Premium", systemImage: "creditcard") }
+            PremiumFlowView()
+                .tabItem { Label("Premium", systemImage: "creditcard.fill") }
+
+            ConnectFlowView()
+                .tabItem { Label("Connect", systemImage: "phone.fill") }
 
             ProfileFlowView()
-                .tabItem { Label("Profile", systemImage: "person") }
+                .tabItem { Label("Profile", systemImage: "person.fill") }
         }
     }
 }
 
-// MARK: - Home Flow
+// MARK: - Tab Flows
 
 struct HomeFlowView: View {
     @State private var router = HomeRouter()
-
     var body: some View {
         NavigationStack(path: $router.path) {
             HomeView()
                 .navigationDestination(for: HomeRoute.self) { route in
                     switch route {
-                    case .profile: ProfileView()
-                    case .settings: SettingsView()
                     case .notifications: NotificationsView()
                     }
                 }
@@ -200,11 +211,8 @@ struct HomeFlowView: View {
     }
 }
 
-// MARK: - AI Flow
-
 struct AIFlowView: View {
     @State private var router = AIRouter()
-
     var body: some View {
         NavigationStack(path: $router.path) {
             AIStudioView()
@@ -219,17 +227,13 @@ struct AIFlowView: View {
     }
 }
 
-// MARK: - Payment Flow
-
-struct PaymentFlowView: View {
-    @State private var router = PaymentRouter()
-
+struct PremiumFlowView: View {
+    @State private var router = PremiumRouter()
     var body: some View {
         NavigationStack(path: $router.path) {
-            PaymentView()
-                .navigationDestination(for: PaymentRoute.self) { route in
+            PremiumView()
+                .navigationDestination(for: PremiumRoute.self) { route in
                     switch route {
-                    case .paywall: PaywallView()
                     case .transactionHistory: TransactionHistoryView()
                     }
                 }
@@ -238,11 +242,24 @@ struct PaymentFlowView: View {
     }
 }
 
-// MARK: - Profile Flow
+struct ConnectFlowView: View {
+    @State private var router = ConnectRouter()
+    var body: some View {
+        NavigationStack(path: $router.path) {
+            ConnectView()
+                .navigationDestination(for: ConnectRoute.self) { route in
+                    switch route {
+                    case .contactDetail(let id): ContactDetailView(contactId: id)
+                    case .activeCall(let channel): VoiceCallView(channel: channel)
+                    }
+                }
+        }
+        .environment(router)
+    }
+}
 
 struct ProfileFlowView: View {
     @State private var router = ProfileRouter()
-
     var body: some View {
         NavigationStack(path: $router.path) {
             ProfileView()
@@ -250,6 +267,7 @@ struct ProfileFlowView: View {
                     switch route {
                     case .editProfile: EditProfileView()
                     case .settings: SettingsView()
+                    case .voiceNotes: VoiceNotesView()
                     }
                 }
         }
