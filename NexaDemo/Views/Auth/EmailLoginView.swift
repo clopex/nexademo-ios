@@ -34,7 +34,8 @@ struct EmailLoginView: View {
                             placeholder: "john.smith@gmail.com",
                             text: $email,
                             isSecure: false,
-                            showsEye: false
+                            showsEye: false,
+                            focus: .email
                         )
                         .opacity(stage == .email ? 1 : 0)
                         .offset(x: offset(for: .email))
@@ -44,7 +45,8 @@ struct EmailLoginView: View {
                             text: $password,
                             isSecure: isSecure,
                             showsEye: true,
-                            toggleSecure: { isSecure.toggle() }
+                            toggleSecure: { isSecure.toggle() },
+                            focus: .password
                         )
                         .opacity(stage == .password ? 1 : 0)
                         .offset(x: offset(for: .password))
@@ -54,7 +56,8 @@ struct EmailLoginView: View {
                             text: $confirmPassword,
                             isSecure: isSecureConfirm,
                             showsEye: true,
-                            toggleSecure: { isSecureConfirm.toggle() }
+                            toggleSecure: { isSecureConfirm.toggle() },
+                            focus: .confirm
                         )
                         .opacity(stage == .confirm ? 1 : 0)
                         .offset(x: offset(for: .confirm))
@@ -110,6 +113,20 @@ struct EmailLoginView: View {
             RegisterView()
                 .environment(authVM)
         }
+        .task {
+            focusField = .email
+        }
+        .task(id: stage) {
+            switch stage {
+            case .email:
+                focusField = .email
+            case .password:
+                focusField = .password
+            case .confirm:
+                confirmPassword = ""
+                focusField = .confirm
+            }
+        }
     }
 
     private var title: String {
@@ -150,7 +167,8 @@ struct EmailLoginView: View {
         text: Binding<String>,
         isSecure: Bool,
         showsEye: Bool = false,
-        toggleSecure: (() -> Void)? = nil
+        toggleSecure: (() -> Void)? = nil,
+        focus: Field
     ) -> some View {
         VStack(spacing: 10) {
             HStack {
@@ -165,12 +183,14 @@ struct EmailLoginView: View {
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .multilineTextAlignment(.center)
+                            .focused($focusField, equals: focus)
                     } else {
                         TextField("", text: text)
                             .textInputAutocapitalization(.never)
                             .keyboardType(.emailAddress)
                             .autocorrectionDisabled()
                             .multilineTextAlignment(.center)
+                            .focused($focusField, equals: focus)
                     }
                 }
                 if showsEye, let toggleSecure {
