@@ -1,11 +1,12 @@
 import SwiftUI
 
-struct EmailLoginView: View {
+struct PasswordLoginView: View {
     @Environment(AuthViewModel.self) private var authVM
     @Environment(\.dismiss) private var dismiss
-    @State private var email = ""
+    let email: String
+    @State private var password = ""
+    @State private var isSecure = true
     @State private var showRegister = false
-    @State private var goToPassword = false
 
     var body: some View {
         ZStack {
@@ -16,15 +17,21 @@ struct EmailLoginView: View {
 
                 Spacer()
                 VStack(spacing: 24) {
-                    Text("What is your email address?")
+                    Text("Enter your password")
                         .font(.title3.weight(.semibold))
                         .foregroundColor(.black.opacity(0.85))
 
                     VStack(spacing: 14) {
+                        Text(email)
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                            .padding(.vertical, 6)
+
                         underlinedField(
-                            placeholder: "john.smith@gmail.com",
-                            text: $email,
-                            isSecure: false
+                            placeholder: "Password",
+                            text: $password,
+                            isSecure: isSecure,
+                            showsEye: true
                         )
                     }
                 }
@@ -39,14 +46,8 @@ struct EmailLoginView: View {
                         .padding(.bottom, 8)
                 }
 
-                NavigationLink(isActive: $goToPassword) {
-                    PasswordLoginView(email: email)
-                        .environment(authVM)
-                } label: { EmptyView() }
-                .hidden()
-
                 Button {
-                    goToPassword = true
+                    Task { await authVM.login(email: email, password: password) }
                 } label: {
                     Text("Continue")
                         .font(.headline)
@@ -56,7 +57,7 @@ struct EmailLoginView: View {
                         .background(buttonColor)
                         .cornerRadius(28)
                 }
-                .disabled(authVM.isLoading || email.isEmpty)
+                .disabled(authVM.isLoading || password.isEmpty)
                 .padding(.horizontal, 24)
                 .padding(.bottom, 28)
             }
@@ -82,7 +83,7 @@ struct EmailLoginView: View {
     }
 
     private var buttonColor: Color {
-        (authVM.isLoading || email.isEmpty)
+        (authVM.isLoading || password.isEmpty)
         ? Color.gray.opacity(0.5)
         : Color.black
     }
@@ -105,7 +106,6 @@ struct EmailLoginView: View {
                     } else {
                         TextField("", text: text)
                             .textInputAutocapitalization(.never)
-                            .keyboardType(.emailAddress)
                             .autocorrectionDisabled()
                             .multilineTextAlignment(.center)
                     }
@@ -131,7 +131,7 @@ struct EmailLoginView: View {
 
 #Preview {
     NavigationStack {
-        EmailLoginView()
+        PasswordLoginView(email: "john.smith@gmail.com")
             .environment(AuthViewModel())
     }
 }
