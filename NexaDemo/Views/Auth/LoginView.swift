@@ -29,7 +29,7 @@ struct LoginView: View {
 
                 Spacer()
                 VStack(spacing: 24) {
-                    Text("Log in")
+                    Text("Login")
                         .font(.title2.bold())
                         .foregroundStyle(.black.opacity(0.85))
 
@@ -83,6 +83,11 @@ struct LoginView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 28)
             }
+
+            if authVM.isLoading {
+                LoadingOverlayView(text: "Signing in...")
+                    .allowsHitTesting(true)
+            }
         }
         .task {
             if email.isEmpty { focusField = .email }
@@ -107,8 +112,10 @@ struct LoginView: View {
                         .clipShape(.circle)
                 }
                 .buttonStyle(.plain)
+                .disabled(authVM.isLoading)
             }
         }
+        .navigationBarBackButtonHidden(true)
     }
 
     private var buttonTitle: String {

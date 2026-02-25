@@ -10,8 +10,12 @@ final class AuthViewModel {
     var errorMessage: String?
 
     init() {
-        Task { @MainActor in
-            await loadCurrentUser()
+        let defaults = UserDefaults.standard
+        let shouldClear = !defaults.bool(forKey: "hasLaunchedBefore")
+        if shouldClear { defaults.set(true, forKey: "hasLaunchedBefore") }
+
+        Task {
+            await launchSequence(shouldClear: shouldClear)
         }
     }
 
@@ -90,6 +94,13 @@ final class AuthViewModel {
         Task { await KeychainService.shared.deleteToken() }
         currentUser = nil
         isLoggedIn = false
+    }
+
+    private func launchSequence(shouldClear: Bool) async {
+        if shouldClear {
+            await KeychainService.shared.deleteToken()
+        }
+        await loadCurrentUser()
     }
 
     private func setError(_ error: Error) {

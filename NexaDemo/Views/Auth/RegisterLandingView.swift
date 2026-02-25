@@ -41,6 +41,7 @@ struct RegisterLandingView: View {
                         .padding([.horizontal, .bottom], 24)
 
                     AppleAuthButton()
+                        .padding(.bottom, 10)
 
                     Button {
                         authRouter.push(.login)
@@ -49,6 +50,7 @@ struct RegisterLandingView: View {
                             .bold()
                             .foregroundStyle(.black)
                     }
+                    .padding(.bottom, 10)
 
                     Button {
                         authRouter.push(.emailLogin)

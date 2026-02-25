@@ -95,6 +95,11 @@ struct EmailLoginView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 28)
             }
+
+            if authVM.isLoading {
+                LoadingOverlayView(text: "Signing in...")
+                    .allowsHitTesting(true)
+            }
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -108,6 +113,7 @@ struct EmailLoginView: View {
                         .clipShape(.circle)
                 }
                 .buttonStyle(.plain)
+                .disabled(authVM.isLoading)
             }
         }
         .navigationBarBackButtonHidden(true)
