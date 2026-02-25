@@ -216,9 +216,10 @@ struct EmailLoginView: View {
     }
 
     private func isValidEmail(_ text: String) -> Bool {
-        guard !text.isEmpty else { return false }
-        let pattern = #"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$"#
-        return NSPredicate(format: "SELF MATCHES[c] %@", pattern).evaluate(with: text)
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let pattern = #"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$"#
+        return NSPredicate(format: "SELF MATCHES[c] %@", pattern).evaluate(with: trimmed)
     }
 }
 
