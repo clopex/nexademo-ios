@@ -97,16 +97,19 @@ struct EmailLoginView: View {
                     if text.wrappedValue.isEmpty {
                         Text(placeholder)
                             .foregroundColor(Color.gray.opacity(0.4))
+                            .frame(maxWidth: .infinity, alignment: .center)
                     }
                     if isSecure {
                         SecureField("", text: text)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                            .multilineTextAlignment(.center)
                     } else {
                         TextField("", text: text)
                             .textInputAutocapitalization(.never)
                             .keyboardType(.emailAddress)
                             .autocorrectionDisabled()
+                            .multilineTextAlignment(.center)
                     }
                 }
                 if showsEye {
