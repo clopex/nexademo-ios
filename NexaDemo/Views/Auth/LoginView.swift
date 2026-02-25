@@ -5,50 +5,48 @@ struct LoginView: View {
     @Environment(AuthViewModel.self) private var authVM
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color("Background").ignoresSafeArea()
+        ZStack {
+            Color("Background").ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    Spacer().frame(height: 80)
+            VStack(spacing: 0) {
+                Spacer().frame(height: 80)
 
-                    VStack(spacing: 8) {
-                        Text("Privacy by design")
-                            .font(.title2.bold())
-                            .foregroundStyle(.black.opacity(0.85))
-                        Text("We never sell or share your information with\nthird parties.")
-                            .font(.subheadline)
-                            .foregroundStyle(.gray)
-                            .multilineTextAlignment(.center)
+                VStack(spacing: 8) {
+                    Text("Privacy by design")
+                        .font(.title2.bold())
+                        .foregroundStyle(.black.opacity(0.85))
+                    Text("We never sell or share your information with\nthird parties.")
+                        .font(.subheadline)
+                        .foregroundStyle(.gray)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 32)
+
+                Spacer()
+
+                Image(systemName: "lock.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 160, height: 160)
+                    .foregroundStyle(
+                        LinearGradient(colors: [.white, Color(.systemGray4)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .shadow(color: Color.black.opacity(0.16), radius: 10, x: 0, y: 0)
+
+                Spacer()
+
+                VStack(spacing: 8) {
+                    TermsText()
+                        .padding([.horizontal, .bottom], 24)
+
+                    AppleAuthButton()
+
+                    NavigationLink(value: AuthRoute.emailLogin) {
+                        Text("Use email instead")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.black.opacity(0.6))
                     }
-                    .padding(.horizontal, 32)
-
-                    Spacer()
-
-                    Image(systemName: "lock.circle.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 160, height: 160)
-                        .foregroundStyle(
-                            LinearGradient(colors: [.white, Color(.systemGray4)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                        )
-                        .shadow(color: Color.black.opacity(0.16), radius: 10, x: 0, y: 0)
-
-                    Spacer()
-
-                    VStack(spacing: 8) {
-                        TermsText()
-                            .padding([.horizontal, .bottom], 24)
-
-                        AppleAuthButton()
-
-                        NavigationLink(value: AuthRoute.emailLogin) {
-                            Text("Use email instead")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.black.opacity(0.6))
-                        }
-                        .padding(.top, 4)
-                    }
+                    .padding(.top, 4)
                 }
             }
         }
