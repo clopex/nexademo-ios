@@ -3,7 +3,7 @@ import AuthenticationServices
 
 struct LoginView: View {
     @Environment(AuthViewModel.self) private var authVM
-    @State private var goToEmail = false
+    @Environment(AuthRouter.self) private var authRouter
 
     var body: some View {
         NavigationStack {
@@ -43,12 +43,7 @@ struct LoginView: View {
 
                         AppleAuthButton()
 
-                        NavigationLink(destination: EmailLoginView().environment(authVM), isActive: $goToEmail) {
-                            EmptyView()
-                        }
-                        .hidden()
-
-                        Button { goToEmail = true } label: {
+                        Button { authRouter.push(.emailLogin) } label: {
                             Text("Use email instead")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.black.opacity(0.6))
