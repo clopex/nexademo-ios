@@ -3,11 +3,18 @@ import SwiftUI
 struct EmailLoginView: View {
     @Environment(AuthViewModel.self) private var authVM
     @Environment(\.dismiss) private var dismiss
+    
+    private enum Stage {
+        case email, password, confirm
+    }
+    
     @State private var email = ""
-    @State private var showRegister = false
-    @State private var isPasswordStage = false
     @State private var password = ""
+    @State private var confirmPassword = ""
     @State private var isSecure = true
+    @State private var isSecureConfirm = true
+    @State private var showRegister = false
+    @State private var stage: Stage = .email
 
     var body: some View {
         ZStack {
@@ -18,7 +25,7 @@ struct EmailLoginView: View {
 
                 Spacer()
                 VStack(spacing: 24) {
-                    Text(isPasswordStage ? "Enter your password" : "What is your email address?")
+                    Text(title)
                         .font(.title3.weight(.semibold))
                         .foregroundColor(.black.opacity(0.85))
 
@@ -26,21 +33,33 @@ struct EmailLoginView: View {
                         underlinedField(
                             placeholder: "john.smith@gmail.com",
                             text: $email,
-                            isSecure: false
+                            isSecure: false,
+                            showsEye: false
                         )
-                        .opacity(isPasswordStage ? 0 : 1)
-                        .offset(x: isPasswordStage ? -120 : 0)
+                        .opacity(stage == .email ? 1 : 0)
+                        .offset(x: offset(for: .email))
 
                         underlinedField(
                             placeholder: "Password",
                             text: $password,
                             isSecure: isSecure,
-                            showsEye: true
+                            showsEye: true,
+                            toggleSecure: { isSecure.toggle() }
                         )
-                        .opacity(isPasswordStage ? 1 : 0)
-                        .offset(x: isPasswordStage ? 0 : 120)
+                        .opacity(stage == .password ? 1 : 0)
+                        .offset(x: offset(for: .password))
+
+                        underlinedField(
+                            placeholder: "Repeat password",
+                            text: $confirmPassword,
+                            isSecure: isSecureConfirm,
+                            showsEye: true,
+                            toggleSecure: { isSecureConfirm.toggle() }
+                        )
+                        .opacity(stage == .confirm ? 1 : 0)
+                        .offset(x: offset(for: .confirm))
                     }
-                    .animation(.easeInOut(duration: 0.25), value: isPasswordStage)
+                    .animation(.easeInOut(duration: 0.25), value: stage)
                 }
                 Spacer()
 
@@ -54,13 +73,7 @@ struct EmailLoginView: View {
                 }
 
                 Button {
-                    if isPasswordStage {
-                        Task { await authVM.login(email: email, password: password) }
-                    } else {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            isPasswordStage = true
-                        }
-                    }
+                    advance()
                 } label: {
                     Text("Continue")
                         .font(.headline)
@@ -78,13 +91,7 @@ struct EmailLoginView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
-                    if isPasswordStage {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            isPasswordStage = false
-                        }
-                    } else {
-                        dismiss()
-                    }
+                    goBack()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
@@ -103,19 +110,37 @@ struct EmailLoginView: View {
         }
     }
 
+    private var title: String {
+        switch stage {
+        case .email: return "What is your email address?"
+        case .password: return "Enter your password"
+        case .confirm: return "Repeat your password"
+        }
+    }
+
     private var buttonColor: Color {
         isContinueDisabled ? Color.gray.opacity(0.5) : Color.black
     }
 
     private var isContinueDisabled: Bool {
-        if isPasswordStage {
+        switch stage {
+        case .email:
+            return authVM.isLoading || !isValidEmail(email)
+        case .password:
             return authVM.isLoading || password.isEmpty
+        case .confirm:
+            return authVM.isLoading || confirmPassword.isEmpty || confirmPassword != password
         }
-        return authVM.isLoading || email.isEmpty
     }
 
     @ViewBuilder
-    private func underlinedField(placeholder: String, text: Binding<String>, isSecure: Bool, showsEye: Bool = false) -> some View {
+    private func underlinedField(
+        placeholder: String,
+        text: Binding<String>,
+        isSecure: Bool,
+        showsEye: Bool = false,
+        toggleSecure: (() -> Void)? = nil
+    ) -> some View {
         VStack(spacing: 10) {
             HStack {
                 ZStack(alignment: .leading) {
@@ -137,10 +162,8 @@ struct EmailLoginView: View {
                             .multilineTextAlignment(.center)
                     }
                 }
-                if showsEye {
-                    Button {
-                        self.isSecure.toggle()
-                    } label: {
+                if showsEye, let toggleSecure {
+                    Button(action: toggleSecure) {
                         Image(systemName: isSecure ? "eye.slash" : "eye")
                             .foregroundColor(.gray)
                     }
@@ -153,6 +176,47 @@ struct EmailLoginView: View {
         }
         .font(.title3.weight(.semibold))
         .padding(.horizontal, 32)
+    }
+
+    private func offset(for target: Stage) -> CGFloat {
+        switch (stage, target) {
+        case (.email, .email): return 0
+        case (.email, _): return 120
+        case (.password, .password): return 0
+        case (.password, .email): return -120
+        case (.password, .confirm): return 120
+        case (.confirm, .confirm): return 0
+        case (.confirm, .password): return -120
+        default: return 120
+        }
+    }
+
+    private func advance() {
+        switch stage {
+        case .email:
+            withAnimation(.easeInOut(duration: 0.25)) { stage = .password }
+        case .password:
+            withAnimation(.easeInOut(duration: 0.25)) { stage = .confirm }
+        case .confirm:
+            Task { await authVM.login(email: email, password: password) }
+        }
+    }
+
+    private func goBack() {
+        switch stage {
+        case .email:
+            dismiss()
+        case .password:
+            withAnimation(.easeInOut(duration: 0.25)) { stage = .email }
+        case .confirm:
+            withAnimation(.easeInOut(duration: 0.25)) { stage = .password }
+        }
+    }
+
+    private func isValidEmail(_ text: String) -> Bool {
+        guard !text.isEmpty else { return false }
+        let pattern = #"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$"#
+        return NSPredicate(format: "SELF MATCHES[c] %@", pattern).evaluate(with: text)
     }
 }
 
