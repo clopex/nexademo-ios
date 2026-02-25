@@ -124,12 +124,12 @@ struct EmailLoginView: View {
         .task(id: stage) {
             switch stage {
             case .email:
-                focusField = .email
+                if email.isEmpty { focusField = .email }
             case .password:
-                focusField = .password
+                if password.isEmpty { focusField = .password }
             case .confirm:
                 confirmPassword = ""
-                focusField = .confirm
+                if confirmPassword.isEmpty { focusField = .confirm }
             }
         }
     }
