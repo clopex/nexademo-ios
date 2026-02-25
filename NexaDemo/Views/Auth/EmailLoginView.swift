@@ -88,7 +88,17 @@ struct EmailLoginView: View {
                 .padding(.bottom, 28)
             }
         }
-        .navigationBarBackButtonHidden(false)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: goBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.black)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .navigationBarBackButtonHidden(true)
         .sheet(isPresented: $showRegister) {
             RegisterView()
                 .environment(authVM)
