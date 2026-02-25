@@ -211,7 +211,10 @@ struct EmailLoginView: View {
         case .password:
             withAnimation(.easeInOut(duration: 0.25)) { stage = .email }
         case .confirm:
-            withAnimation(.easeInOut(duration: 0.25)) { stage = .password }
+            withAnimation(.easeInOut(duration: 0.25)) {
+                confirmPassword = ""
+                stage = .password
+            }
         }
     }
 
