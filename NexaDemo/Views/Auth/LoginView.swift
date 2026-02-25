@@ -136,14 +136,18 @@ private struct EmailLoginView: View {
         ZStack {
             Color("Background").ignoresSafeArea()
 
-            VStack(spacing: 32) {
+            VStack(spacing: 0) {
+                // top spacer to mimic status bar offset
+                Spacer().frame(height: 12)
+
+                // content centered vertically
                 Spacer()
                 VStack(spacing: 20) {
                     Text("What is your email address?")
                         .font(.title3.weight(.semibold))
-                        .foregroundColor(.black.opacity(0.8))
+                        .foregroundColor(.black.opacity(0.85))
 
-                    VStack(spacing: 16) {
+                    VStack(spacing: 18) {
                         underlinedField(
                             placeholder: "john.smith@gmail.com",
                             text: $email,
@@ -166,6 +170,7 @@ private struct EmailLoginView: View {
                         .font(.caption)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
+                        .padding(.bottom, 8)
                 }
 
                 Button {
@@ -175,13 +180,13 @@ private struct EmailLoginView: View {
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 54)
+                        .frame(height: 56)
                         .background(buttonColor)
-                        .cornerRadius(27)
+                        .cornerRadius(28)
                 }
                 .disabled(authVM.isLoading || email.isEmpty || password.isEmpty)
                 .padding(.horizontal, 24)
-                .padding(.bottom, 20)
+                .padding(.bottom, 28)
             }
         }
         .toolbar {
@@ -212,21 +217,27 @@ private struct EmailLoginView: View {
 
     @ViewBuilder
     private func underlinedField(placeholder: String, text: Binding<String>, isSecure: Bool, showsEye: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(spacing: 8) {
             HStack {
-                if isSecure {
-                    SecureField(placeholder, text: text)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                } else {
-                    TextField(placeholder, text: text)
-                        .textInputAutocapitalization(.never)
-                        .keyboardType(.emailAddress)
-                        .autocorrectionDisabled()
+                ZStack(alignment: .leading) {
+                    if text.wrappedValue.isEmpty {
+                        Text(placeholder)
+                            .foregroundColor(Color.gray.opacity(0.45))
+                    }
+                    if isSecure {
+                        SecureField("", text: text)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    } else {
+                        TextField("", text: text)
+                            .textInputAutocapitalization(.never)
+                            .keyboardType(.emailAddress)
+                            .autocorrectionDisabled()
+                    }
                 }
                 if showsEye {
                     Button {
-                        isSecure ? (self.isSecure = false) : (self.isSecure = true)
+                        self.isSecure.toggle()
                     } label: {
                         Image(systemName: isSecure ? "eye.slash" : "eye")
                             .foregroundColor(.gray)
@@ -237,6 +248,7 @@ private struct EmailLoginView: View {
                 .fill(Color.gray.opacity(0.25))
                 .frame(height: 1)
         }
+        .font(.title3.weight(.semibold))
         .padding(.horizontal, 32)
     }
 }
