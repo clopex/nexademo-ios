@@ -16,12 +16,12 @@ struct EmailLoginView: View {
                 Spacer().frame(height: 12)
 
                 Spacer()
-                VStack(spacing: 20) {
+                VStack(spacing: 28) {
                     Text("What is your email address?")
                         .font(.title3.weight(.semibold))
                         .foregroundColor(.black.opacity(0.85))
 
-                    VStack(spacing: 18) {
+                    VStack(spacing: 22) {
                         underlinedField(
                             placeholder: "john.smith@gmail.com",
                             text: $email,
@@ -91,12 +91,12 @@ struct EmailLoginView: View {
 
     @ViewBuilder
     private func underlinedField(placeholder: String, text: Binding<String>, isSecure: Bool, showsEye: Bool = false) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             HStack {
                 ZStack(alignment: .leading) {
                     if text.wrappedValue.isEmpty {
                         Text(placeholder)
-                            .foregroundColor(Color.gray.opacity(0.45))
+                            .foregroundColor(Color.gray.opacity(0.4))
                     }
                     if isSecure {
                         SecureField("", text: text)
@@ -118,6 +118,7 @@ struct EmailLoginView: View {
                     }
                 }
             }
+            .frame(height: 48)
             Rectangle()
                 .fill(Color.gray.opacity(0.25))
                 .frame(height: 1)
