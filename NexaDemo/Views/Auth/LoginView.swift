@@ -3,6 +3,7 @@ import AuthenticationServices
 
 struct LoginView: View {
     @Environment(AuthViewModel.self) private var authVM
+    @Environment(AuthRouter.self) private var authRouter
 
     var body: some View {
         ZStack {
@@ -123,4 +124,5 @@ private struct AppleAuthButton: View {
 #Preview {
     LoginView()
         .environment(AuthViewModel())
+        .environment(AuthRouter())
 }

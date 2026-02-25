@@ -101,14 +101,11 @@ struct EmailLoginView: View {
                 Button(action: goBack) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.black)
+                        .foregroundStyle(.black)
                         .frame(width: 24, height: 24)
                         .padding(12)
-                        .background(
-                            Circle()
-                                .fill(Color.white)
-                                .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 4)
-                        )
+                        .background(Color.white)
+                        .clipShape(.circle)
                 }
                 .buttonStyle(.plain)
             }

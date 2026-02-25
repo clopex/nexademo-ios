@@ -118,7 +118,6 @@ final class AppSheetManager {
     func dismissFullScreen() { activeFullScreen = nil }
 }
 
-// MARK: - Root View
 
 // MARK: - Auth Flow
 
