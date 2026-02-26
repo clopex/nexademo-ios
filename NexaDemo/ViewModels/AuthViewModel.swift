@@ -24,7 +24,7 @@ final class AuthViewModel {
         errorMessage = nil
 
         do {
-            let response = try await APIService.shared.register(fullName: fullName, email: email, password: password)
+            let response = try await AuthService.shared.register(fullName: fullName, email: email, password: password)
             await KeychainService.shared.saveToken(response.token)
             currentUser = response.user
             isLoggedIn = true
@@ -40,7 +40,7 @@ final class AuthViewModel {
         errorMessage = nil
 
         do {
-            let response = try await APIService.shared.login(email: email, password: password)
+            let response = try await AuthService.shared.login(email: email, password: password)
             await KeychainService.shared.saveToken(response.token)
             currentUser = response.user
             isLoggedIn = true
@@ -56,7 +56,7 @@ final class AuthViewModel {
         errorMessage = nil
 
         do {
-            let response = try await APIService.shared.googleLogin(googleId: googleId, email: email, fullName: fullName, profilePicture: profilePicture)
+            let response = try await AuthService.shared.googleLogin(googleId: googleId, email: email, fullName: fullName, profilePicture: profilePicture)
             await KeychainService.shared.saveToken(response.token)
             currentUser = response.user
             isLoggedIn = true
@@ -72,7 +72,7 @@ final class AuthViewModel {
         errorMessage = nil
 
         do {
-            let response = try await APIService.shared.appleLogin(appleId: appleId, email: email, fullName: fullName)
+            let response = try await AuthService.shared.appleLogin(appleId: appleId, email: email, fullName: fullName)
             await KeychainService.shared.saveToken(response.token)
             currentUser = response.user
             isLoggedIn = true
@@ -85,7 +85,7 @@ final class AuthViewModel {
 
     func loadCurrentUser() async {
         do {
-            currentUser = try await APIService.shared.getMe()
+            currentUser = try await AuthService.shared.getMe()
             isLoggedIn = true
         } catch {
             logout()
