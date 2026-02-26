@@ -89,6 +89,22 @@ struct APIService: Sendable {
         return response.user
     }
 
+    func updateProfile(_ payload: ProfileUpdateRequest) async throws -> User {
+        let url = baseURL.appendingPathComponent("auth/profile")
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = await KeychainService.shared.getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        } else {
+            throw APIServiceError.missingToken
+        }
+        request.httpBody = try JSONEncoder().encode(payload)
+
+        let response: ProfileResponse = try await performRequest(request)
+        return response.user
+    }
+
     private func performRequest<T: Decodable>(_ request: URLRequest) async throws -> T {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
