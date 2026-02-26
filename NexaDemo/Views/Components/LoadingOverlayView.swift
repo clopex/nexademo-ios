@@ -11,14 +11,18 @@ struct LoadingOverlayView: View {
 
     var body: some View {
         ZStack {
+            Color.black.opacity(0.75).ignoresSafeArea()
+
             VStack(spacing: 12) {
-                LoadingMessageCarousel(messages: messages)
                 SpinnerOrbital(spin: spin, pulse: pulse)
             }
             .padding(20)
             .background(Color.white)
             .clipShape(.rect(cornerRadius: 20))
             .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: 10)
+
+            LoadingMessageCarousel(messages: messages)
+                .offset(y: -110)
         }
         .task {
             spin = true
@@ -28,9 +32,9 @@ struct LoadingOverlayView: View {
 
     private static let defaultMessages = [
         "Warming up the servers...",
-        "Polishing the pixels...",
         "Asking the cloud nicely...",
-        "Still faster than a coffee run...",
+        "Taking a number and finding a chair...",
+        "Waiting for the green light to turn green...",
         "Almost there..."
     ]
 }
@@ -44,9 +48,9 @@ private struct LoadingMessageCarousel: View {
 
     var body: some View {
         Text(messages[index])
-            .font(.footnote)
+            .font(.title3)
             .bold()
-            .foregroundStyle(.black.opacity(0.75))
+            .foregroundStyle(.white.opacity(0.75))
             .opacity(opacity)
             .offset(y: offset)
             .task {
@@ -58,15 +62,22 @@ private struct LoadingMessageCarousel: View {
 
     private func runLoop() async {
         while !Task.isCancelled {
-            await animateIn()
-            try? await Task.sleep(for: .seconds(1))
-            await animateOut()
-            try? await Task.sleep(for: .seconds(0.2))
-            index = (index + 1) % messages.count
+            await MainActor.run { prepareIn() }
+            await MainActor.run { animateIn() }
+            try? await Task.sleep(for: .seconds(2))
+            await MainActor.run { animateOut() }
+            try? await Task.sleep(for: .seconds(0.5))
+            await MainActor.run {
+                index = (index + 1) % messages.count
+            }
         }
     }
 
-    @MainActor
+    private func prepareIn() {
+        opacity = 0
+        offset = 30
+    }
+
     private func animateIn() {
         withAnimation(.easeOut(duration: 0.35)) {
             opacity = 1
@@ -74,7 +85,6 @@ private struct LoadingMessageCarousel: View {
         }
     }
 
-    @MainActor
     private func animateOut() {
         withAnimation(.easeIn(duration: 0.25)) {
             opacity = 0

@@ -89,6 +89,7 @@ struct LoginView: View {
                     .allowsHitTesting(true)
             }
         }
+        .toolbar(authVM.isLoading ? .hidden : .visible, for: .navigationBar)
         .task {
             if email.isEmpty { focusField = .email }
         }

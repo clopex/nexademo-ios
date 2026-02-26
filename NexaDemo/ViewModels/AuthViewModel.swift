@@ -54,7 +54,6 @@ final class AuthViewModel {
     func googleLogin(googleId: String, email: String, fullName: String, profilePicture: String?) async {
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
 
         do {
             let response = try await APIService.shared.googleLogin(googleId: googleId, email: email, fullName: fullName, profilePicture: profilePicture)
@@ -64,12 +63,13 @@ final class AuthViewModel {
         } catch {
             setError(error)
         }
+
+        isLoading = false
     }
 
     func appleLogin(appleId: String, email: String?, fullName: String?) async {
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
 
         do {
             let response = try await APIService.shared.appleLogin(appleId: appleId, email: email, fullName: fullName)
@@ -79,6 +79,8 @@ final class AuthViewModel {
         } catch {
             setError(error)
         }
+
+        isLoading = false
     }
 
     func loadCurrentUser() async {
