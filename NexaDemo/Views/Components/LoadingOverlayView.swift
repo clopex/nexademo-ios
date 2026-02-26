@@ -1,17 +1,19 @@
 import SwiftUI
 
 struct LoadingOverlayView: View {
-    let text: String
+    let messages: [String]
     @State private var spin = false
     @State private var pulse = false
+
+    init(messages: [String] = LoadingOverlayView.defaultMessages) {
+        self.messages = messages
+    }
 
     var body: some View {
         ZStack {
             VStack(spacing: 12) {
+                LoadingMessageCarousel(messages: messages)
                 SpinnerOrbital(spin: spin, pulse: pulse)
-                Text(text)
-                    .font(.footnote.bold())
-                    .foregroundStyle(.black.opacity(0.75))
             }
             .padding(20)
             .background(Color.white)
@@ -21,6 +23,62 @@ struct LoadingOverlayView: View {
         .task {
             spin = true
             pulse = true
+        }
+    }
+
+    private static let defaultMessages = [
+        "Warming up the servers...",
+        "Polishing the pixels...",
+        "Asking the cloud nicely...",
+        "Still faster than a coffee run...",
+        "Almost there..."
+    ]
+}
+
+private struct LoadingMessageCarousel: View {
+    let messages: [String]
+    @State private var index = 0
+    @State private var opacity = 0.0
+    @State private var offset: CGFloat = 30
+    @State private var started = false
+
+    var body: some View {
+        Text(messages[index])
+            .font(.footnote)
+            .bold()
+            .foregroundStyle(.black.opacity(0.75))
+            .opacity(opacity)
+            .offset(y: offset)
+            .task {
+                guard !started else { return }
+                started = true
+                await runLoop()
+            }
+    }
+
+    private func runLoop() async {
+        while !Task.isCancelled {
+            await animateIn()
+            try? await Task.sleep(for: .seconds(1))
+            await animateOut()
+            try? await Task.sleep(for: .seconds(0.2))
+            index = (index + 1) % messages.count
+        }
+    }
+
+    @MainActor
+    private func animateIn() {
+        withAnimation(.easeOut(duration: 0.35)) {
+            opacity = 1
+            offset = 0
+        }
+    }
+
+    @MainActor
+    private func animateOut() {
+        withAnimation(.easeIn(duration: 0.25)) {
+            opacity = 0
+            offset = -30
         }
     }
 }
@@ -54,5 +112,5 @@ private struct SpinnerOrbital: View {
 }
 
 #Preview {
-    LoadingOverlayView(text: "Signing in...")
+    LoadingOverlayView()
 }

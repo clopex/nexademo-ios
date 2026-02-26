@@ -85,7 +85,7 @@ struct LoginView: View {
             }
 
             if authVM.isLoading {
-                LoadingOverlayView(text: "Signing in...")
+                LoadingOverlayView()
                     .allowsHitTesting(true)
             }
         }
