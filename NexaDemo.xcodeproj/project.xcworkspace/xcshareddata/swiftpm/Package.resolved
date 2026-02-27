@@ -1,0 +1,15 @@
+{
+  "originHash" : "c9b2addddfb957e1d8f53bdc6420c25b897f907f1f86b57be02e551625c94b26",
+  "pins" : [
+    {
+      "identity" : "imagekit-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/imagekit-developer/imagekit-ios.git",
+      "state" : {
+        "revision" : "22c8b49ac2ef8b2feb88f08484e061f47cc25e3a",
+        "version" : "3.1.0"
+      }
+    }
+  ],
+  "version" : 3
+}
