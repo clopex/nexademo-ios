@@ -266,6 +266,7 @@
 				INFOPLIST_KEY_API_BASE_URL = "https://nexademo-backend.onrender.com/api";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We use the camera to let you take a profile photo.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We use your photo library to choose a profile photo.";
+				INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -314,6 +315,7 @@
 				INFOPLIST_KEY_API_BASE_URL = "https://nexademo-backend.onrender.com/api";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We use the camera to let you take a profile photo.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We use your photo library to choose a profile photo.";
+				INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

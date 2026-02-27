@@ -19,6 +19,8 @@ struct EmailLoginView: View {
     @State private var isSecureConfirm = true
     @State private var showRegister = false
     @State private var stage: Stage = .email
+    @State private var showToast = false
+    @State private var toast = Toast.example
     @FocusState private var focusField: Field?
 
     var body: some View {
@@ -71,15 +73,6 @@ struct EmailLoginView: View {
                 }
                 Spacer()
 
-                if let error = authVM.errorMessage {
-                    Text(error)
-                        .foregroundStyle(.red)
-                        .font(.caption)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 8)
-                }
-
                 Button {
                     advance()
                 } label: {
@@ -120,6 +113,21 @@ struct EmailLoginView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .dynamicIslandToasts(isPresented: $showToast, value: toast)
+        .onChange(of: authVM.errorMessage) { _, newValue in
+            guard let message = newValue, !message.isEmpty else { return }
+            toast = Toast(
+                symbol: "xmark.seal.fill",
+                symbolFont: .system(size: 28),
+                symbolForegrgoundStyle: (.white, .red),
+                title: "Registration failed",
+                message: message
+            )
+            showToast = true
+        }
+        .onChange(of: email) { _, _ in dismissToast() }
+        .onChange(of: password) { _, _ in dismissToast() }
+        .onChange(of: confirmPassword) { _, _ in dismissToast() }
         .sheet(isPresented: $showRegister) {
             RegisterView()
                 .environment(authVM)
@@ -266,6 +274,13 @@ struct EmailLoginView: View {
         guard !trimmed.isEmpty else { return false }
         let pattern = #"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$"#
         return NSPredicate(format: "SELF MATCHES[c] %@", pattern).evaluate(with: trimmed)
+    }
+
+    private func dismissToast() {
+        if showToast {
+            showToast = false
+        }
+        authVM.errorMessage = nil
     }
 }
 

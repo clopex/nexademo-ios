@@ -6,6 +6,8 @@ struct RegisterView: View {
     @State private var fullName = ""
     @State private var email = ""
     @State private var password = ""
+    @State private var showToast = false
+    @State private var toast = Toast.example
 
     var body: some View {
         ZStack {
@@ -52,12 +54,6 @@ struct RegisterView: View {
                     )
                 }
 
-                if let error = authVM.errorMessage {
-                    Text(error)
-                        .foregroundStyle(.red)
-                        .font(.caption)
-                }
-
                 Button {
                     Task { await authVM.register(fullName: fullName, email: email, password: password) }
                 } label: {
@@ -79,5 +75,27 @@ struct RegisterView: View {
             }
             .padding(.horizontal, 24)
         }
+        .dynamicIslandToasts(isPresented: $showToast, value: toast)
+        .onChange(of: authVM.errorMessage) { _, newValue in
+            guard let message = newValue, !message.isEmpty else { return }
+            toast = Toast(
+                symbol: "xmark.seal.fill",
+                symbolFont: .system(size: 28),
+                symbolForegrgoundStyle: (.white, .red),
+                title: "Registration failed",
+                message: message
+            )
+            showToast = true
+        }
+        .onChange(of: fullName) { _, _ in dismissToast() }
+        .onChange(of: email) { _, _ in dismissToast() }
+        .onChange(of: password) { _, _ in dismissToast() }
+    }
+
+    private func dismissToast() {
+        if showToast {
+            showToast = false
+        }
+        authVM.errorMessage = nil
     }
 }
