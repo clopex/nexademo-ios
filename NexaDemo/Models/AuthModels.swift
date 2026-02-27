@@ -1,7 +1,7 @@
 import Foundation
 
 struct AuthResponse: Codable, Sendable {
-    let message: String
+    let message: String?
     let token: String
     let user: User
 }

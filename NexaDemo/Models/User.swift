@@ -4,7 +4,7 @@ struct User: Codable, Identifiable, Sendable {
     let id: String
     let fullName: String
     let email: String
-    let isPremium: Bool
+    let isPremium: Bool?
     let gender: String?
     let phone: String?
     let country: String?

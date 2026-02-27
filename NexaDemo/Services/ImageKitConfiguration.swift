@@ -3,14 +3,11 @@ import Foundation
 struct ImageKitConfiguration: Sendable {
     let publicKey: String
     let urlEndpoint: String
+    static let demoPublicKey = "public_FUM6drXF1NmNFqpF/lJFskxeZPU="
+    static let demoPrivateKey = "private_8+l4Qu5/2+DkZlBtajdU005Jvu0="
+    static let demoUrlEndpoint = "https://ik.imagekit.io/nexedemo/"
 
     static func load() -> ImageKitConfiguration? {
-        guard let publicKey = Bundle.main.object(forInfoDictionaryKey: "IMAGEKIT_PUBLIC_KEY") as? String,
-              let urlEndpoint = Bundle.main.object(forInfoDictionaryKey: "IMAGEKIT_URL_ENDPOINT") as? String,
-              !publicKey.isEmpty,
-              !urlEndpoint.isEmpty else {
-            return nil
-        }
-        return ImageKitConfiguration(publicKey: publicKey, urlEndpoint: urlEndpoint)
+        return ImageKitConfiguration(publicKey: demoPublicKey, urlEndpoint: demoUrlEndpoint)
     }
 }

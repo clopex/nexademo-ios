@@ -59,7 +59,7 @@ struct RegisterLandingView: View {
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.black.opacity(0.6))
                     }
-                    .padding(.top, 4)
+
                 }
             }
         }

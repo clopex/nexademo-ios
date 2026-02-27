@@ -40,9 +40,21 @@ struct NetworkClient: Sendable {
             throw NetworkClientError.invalidResponse
         }
 
+        let urlString = request.url?.absoluteString ?? "unknown"
+        let bodyString = String(data: data, encoding: .utf8) ?? "<empty>"
+
         if (200...299).contains(httpResponse.statusCode) {
-            return try JSONDecoder().decode(T.self, from: data)
+            do {
+                let decoded = try JSONDecoder().decode(T.self, from: data)
+                print("Network success [\(httpResponse.statusCode)] \(urlString)")
+                return decoded
+            } catch {
+                print("Network decode error [\(httpResponse.statusCode)] \(urlString) body: \(bodyString)")
+                throw error
+            }
         }
+
+        print("Network error [\(httpResponse.statusCode)] \(urlString) body: \(bodyString)")
 
         let message = (try? JSONDecoder().decode(APIError.self, from: data))?.error
             ?? HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)

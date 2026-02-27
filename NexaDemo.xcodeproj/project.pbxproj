@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E99FBABE2F505DE4003F366B /* ImageKitIO in Frameworks */ = {isa = PBXBuildFile; productRef = E99FBABD2F505DE4003F366B /* ImageKitIO */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		E9CE24FE2F4DBBEA0051E3FD /* NexaDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NexaDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E99FBABE2F505DE4003F366B /* ImageKitIO in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = NexaDemo;
 			packageProductDependencies = (
+				E99FBABD2F505DE4003F366B /* ImageKitIO */,
 			);
 			productName = NexaDemo;
 			productReference = E9CE24FE2F4DBBEA0051E3FD /* NexaDemo.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = E9CE24F52F4DBBEA0051E3FD;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E99FBABC2F505DE4003F366B /* XCRemoteSwiftPackageReference "imagekit-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E9CE24FF2F4DBBEA0051E3FD /* Products */;
 			projectDirPath = "";
@@ -255,6 +264,8 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_API_BASE_URL = "https://nexademo-backend.onrender.com/api";
+				INFOPLIST_KEY_NSCameraUsageDescription = "We use the camera to let you take a profile photo.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We use your photo library to choose a profile photo.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -301,6 +312,8 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_API_BASE_URL = "https://nexademo-backend.onrender.com/api";
+				INFOPLIST_KEY_NSCameraUsageDescription = "We use the camera to let you take a profile photo.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We use your photo library to choose a profile photo.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -355,6 +368,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E99FBABC2F505DE4003F366B /* XCRemoteSwiftPackageReference "imagekit-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/imagekit-developer/imagekit-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E99FBABD2F505DE4003F366B /* ImageKitIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E99FBABC2F505DE4003F366B /* XCRemoteSwiftPackageReference "imagekit-ios" */;
+			productName = ImageKitIO;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E9CE24F62F4DBBEA0051E3FD /* Project object */;
 }

@@ -8,7 +8,13 @@ struct RootView: View {
         @Bindable var sheetManager = sheetManager
 
         Group {
-            if authVM.isLoggedIn {
+            if authVM.isBootstrapping {
+                AuthBootstrapView()
+            } else if authVM.isLoggedIn, authVM.needsProfileSetup {
+                NavigationStack {
+                    UserUpdateView()
+                }
+            } else if authVM.isLoggedIn {
                 MainTabView()
             } else {
                 AuthFlowView()

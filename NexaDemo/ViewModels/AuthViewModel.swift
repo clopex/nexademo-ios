@@ -6,6 +6,8 @@ import Observation
 final class AuthViewModel {
     var currentUser: User?
     var isLoggedIn = false
+    var needsProfileSetup = false
+    var isBootstrapping = true
     var isLoading = false
     var errorMessage: String?
 
@@ -28,6 +30,7 @@ final class AuthViewModel {
             await KeychainService.shared.saveToken(response.token)
             currentUser = response.user
             isLoggedIn = true
+            needsProfileSetup = true
         } catch {
             setError(error)
         }
@@ -44,6 +47,7 @@ final class AuthViewModel {
             await KeychainService.shared.saveToken(response.token)
             currentUser = response.user
             isLoggedIn = true
+            needsProfileSetup = false
         } catch {
             setError(error)
         }
@@ -60,6 +64,7 @@ final class AuthViewModel {
             await KeychainService.shared.saveToken(response.token)
             currentUser = response.user
             isLoggedIn = true
+            needsProfileSetup = false
         } catch {
             setError(error)
         }
@@ -76,6 +81,7 @@ final class AuthViewModel {
             await KeychainService.shared.saveToken(response.token)
             currentUser = response.user
             isLoggedIn = true
+            needsProfileSetup = false
         } catch {
             setError(error)
         }
@@ -87,6 +93,7 @@ final class AuthViewModel {
         do {
             currentUser = try await AuthService.shared.getMe()
             isLoggedIn = true
+            needsProfileSetup = false
         } catch {
             logout()
         }
@@ -96,13 +103,16 @@ final class AuthViewModel {
         Task { await KeychainService.shared.deleteToken() }
         currentUser = nil
         isLoggedIn = false
+        needsProfileSetup = false
     }
 
     private func launchSequence(shouldClear: Bool) async {
+        isBootstrapping = true
         if shouldClear {
             await KeychainService.shared.deleteToken()
         }
         await loadCurrentUser()
+        isBootstrapping = false
     }
 
     private func setError(_ error: Error) {
