@@ -23,6 +23,8 @@ struct UserUpdateView: View {
     }
 
     var body: some View {
+        let isUpdateDisabled = viewModel.isUpdatingProfile || viewModel.isUploadingImage || !viewModel.hasChanges
+
         ZStack {
             Color("Background").ignoresSafeArea()
 
@@ -44,6 +46,26 @@ struct UserUpdateView: View {
                                             .scaledToFill()
                                             .frame(width: 100, height: 100)
                                             .clipShape(.circle)
+                                    } else if let urlString = viewModel.profileImageURL,
+                                              let url = URL(string: urlString) {
+                                        AsyncImage(url: url) { phase in
+                                            switch phase {
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                            case .failure:
+                                                Image(systemName: "person.crop.circle")
+                                                    .foregroundStyle(.black.opacity(0.4))
+                                            case .empty:
+                                                ProgressView()
+                                            @unknown default:
+                                                Image(systemName: "person.crop.circle")
+                                                    .foregroundStyle(.black.opacity(0.4))
+                                            }
+                                        }
+                                        .frame(width: 100, height: 100)
+                                        .clipShape(.circle)
                                     } else {
                                         Image(systemName: "person.crop.circle")
                                             .font(.largeTitle)
@@ -187,25 +209,6 @@ struct UserUpdateView: View {
                                 .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 6)
                         }
 
-                        Button {
-                            Task {
-                                if let user = await viewModel.updateProfile() {
-                                    authVM.currentUser = user
-                                    authVM.needsProfileSetup = false
-                                }
-                            }
-                        } label: {
-                            Text(viewModel.isUpdatingProfile ? "Updating..." : "Update")
-                                .bold()
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 54)
-                                .background(Color.black)
-                                .clipShape(.rect(cornerRadius: 14))
-                        }
-                        .disabled(viewModel.isUpdatingProfile || viewModel.isUploadingImage)
-                        .padding(.top, 8)
-
                         if let message = viewModel.imageStatusMessage {
                             Text(message)
                                 .font(.footnote)
@@ -231,6 +234,24 @@ struct UserUpdateView: View {
             }
         }
         .navigationTitle("Update Profile")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    Task {
+                        if let user = await viewModel.updateProfile() {
+                            authVM.currentUser = user
+                            authVM.needsProfileSetup = false
+                            viewModel.prefill(from: user, force: true)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "person.fill.checkmark")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(isUpdateDisabled ? Color.gray : Color.black)
+                }
+                .disabled(isUpdateDisabled)
+            }
+        }
         .sheet(isPresented: $showCamera) {
             CameraPickerView { image, data in
                 viewModel.setSelectedImage(image, data: data)
@@ -274,6 +295,7 @@ struct UserUpdateView: View {
         }
         .task {
             await countryStore.loadIfNeeded()
+            viewModel.prefill(from: authVM.currentUser)
         }
     }
 

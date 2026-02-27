@@ -6,6 +6,15 @@ import UIKit
 @MainActor
 @Observable
 final class UserUpdateViewModel {
+    private var didPrefill = false
+    private var initialFullName = ""
+    private var initialGender = ""
+    private var initialPhone = ""
+    private var initialPhoneDialCode = ""
+    private var initialCountry = ""
+    private var initialCity = ""
+    private var initialAddress = ""
+    private var initialProfileImageURL = ""
     var profileImage: UIImage?
     var selectedImageData: Data?
     var profileImageURL: String?
@@ -20,6 +29,30 @@ final class UserUpdateViewModel {
     var isUpdatingProfile = false
     var imageStatusMessage: String?
     var updateStatusMessage: String?
+
+    var hasChanges: Bool {
+        if selectedImageData != nil || profileImage != nil {
+            return true
+        }
+
+        let currentFullName = normalized(fullName) ?? ""
+        let currentGender = gender == "Select" ? "" : gender
+        let currentPhone = sanitizePhoneInput(phone)
+        let currentDial = phoneDialCode
+        let currentCountry = normalized(country) ?? ""
+        let currentCity = normalized(city) ?? ""
+        let currentAddress = normalized(address) ?? ""
+        let currentProfileURL = profileImageURL ?? ""
+
+        return currentFullName != initialFullName
+            || currentGender != initialGender
+            || currentPhone != initialPhone
+            || currentDial != initialPhoneDialCode
+            || currentCountry != initialCountry
+            || currentCity != initialCity
+            || currentAddress != initialAddress
+            || currentProfileURL != initialProfileImageURL
+    }
 
     private let tokenProvider = ImageKitLocalTokenProvider(
         publicKey: ImageKitConfiguration.demoPublicKey,
@@ -133,5 +166,46 @@ final class UserUpdateViewModel {
         let middle = digits.dropFirst(3).prefix(3)
         let rest = digits.dropFirst(6)
         return "\(prefix) \(middle) \(rest)"
+    }
+
+    func prefill(from user: User?, force: Bool = false) {
+        guard let user, !didPrefill || force else { return }
+        fullName = user.fullName
+        gender = user.gender ?? "Select"
+        country = user.country ?? ""
+        city = user.city ?? ""
+        address = user.address ?? ""
+        profileImageURL = user.profilePicture
+        if user.profilePicture != nil {
+            imageStatusMessage = "Profile image loaded."
+        }
+        if let phoneValue = user.phone {
+            phone = formatPhoneInput(phoneValue)
+            if phoneValue.hasPrefix("+") == false {
+                phoneDialCode = "+1"
+            } else {
+                let digits = sanitizePhoneInput(phoneValue)
+                if digits.count > 10 {
+                    let dialDigits = digits.dropLast(10)
+                    phoneDialCode = "+\(dialDigits)"
+                    phone = formatPhoneInput(String(digits.suffix(10)))
+                } else {
+                    phone = formatPhoneInput(String(digits))
+                }
+            }
+        }
+        didPrefill = true
+        setBaselineFromCurrent()
+    }
+
+    private func setBaselineFromCurrent() {
+        initialFullName = normalized(fullName) ?? ""
+        initialGender = gender == "Select" ? "" : gender
+        initialPhone = sanitizePhoneInput(phone)
+        initialPhoneDialCode = phoneDialCode
+        initialCountry = normalized(country) ?? ""
+        initialCity = normalized(city) ?? ""
+        initialAddress = normalized(address) ?? ""
+        initialProfileImageURL = profileImageURL ?? ""
     }
 }

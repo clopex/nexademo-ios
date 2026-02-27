@@ -95,6 +95,8 @@ struct EmailLoginView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 28)
             }
+            .opacity(authVM.isLoading ? 0 : 1)
+            .accessibilityHidden(authVM.isLoading)
 
             if authVM.isLoading {
                 LoadingOverlayView()

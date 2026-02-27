@@ -232,7 +232,7 @@ struct ProfileFlowView: View {
     @State private var router = ProfileRouter()
     var body: some View {
         NavigationStack(path: $router.path) {
-            ProfileView()
+            UserUpdateView()
                 .navigationDestination(for: ProfileRoute.self) { route in
                     switch route {
                     case .editProfile: EditProfileView()
