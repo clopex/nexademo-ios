@@ -47,39 +47,16 @@ struct VoiceRecorderSheet: View {
                     editedText = newValue
                 }
 
-                Button(
-                    speechService.isRecording ? "Stop recording" : "Start recording",
-                    systemImage: speechService.isRecording ? "stop.fill" : "mic.fill"
-                ) {
+                VoiceRecorderActionButton(isRecording: speechService.isRecording) {
                     Task {
                         if !hasPermission {
                             hasPermission = await speechService.requestPermissions()
                             guard hasPermission else { return }
+                            await speechService.prepareForRecording()
                         }
                         await speechService.toggle()
                     }
                 }
-                .labelStyle(.iconOnly)
-                .font(.title2)
-                .foregroundStyle(.white)
-                .frame(width: 100, height: 100)
-                .background {
-                    ZStack {
-                        if speechService.isRecording {
-                            Color("BrandAccent")
-                                .opacity(0.3)
-                                .frame(width: 100, height: 100)
-                                .clipShape(.circle)
-                                .scaleEffect(1.2)
-                                .animation(.easeInOut(duration: 0.8).repeatForever(), value: speechService.isRecording)
-                        }
-
-                        Color(speechService.isRecording ? "BrandAccent" : "CardBackground")
-                            .frame(width: 80, height: 80)
-                            .clipShape(.circle)
-                    }
-                }
-                .buttonStyle(.plain)
 
                 if !hasPermission {
                     Text("Microphone permission is required to record.")
@@ -99,18 +76,20 @@ struct VoiceRecorderSheet: View {
 
                 Spacer()
 
-                Button("Save Note") {
+                Button {
                     onSave(editedText)
                     speechService.stopRecording()
                     dismiss()
+                } label: {
+                    Text("Save Note")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Color("BrandAccent").opacity(editedText.isEmpty ? 0.3 : 1))
+                        .clipShape(.rect(cornerRadius: 28))
+                        .contentShape(.rect)
                 }
-                .font(.headline)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .contentShape(.rect)
-                .background(Color("BrandAccent").opacity(editedText.isEmpty ? 0.3 : 1))
-                .clipShape(.rect(cornerRadius: 28))
                 .buttonStyle(.plain)
                 .disabled(editedText.isEmpty)
                 .padding(.horizontal, 24)
@@ -119,6 +98,9 @@ struct VoiceRecorderSheet: View {
         }
         .task {
             hasPermission = await speechService.requestPermissions()
+            if hasPermission {
+                await speechService.prepareForRecording()
+            }
         }
     }
 }

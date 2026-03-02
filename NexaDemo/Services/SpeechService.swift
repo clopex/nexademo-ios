@@ -29,6 +29,8 @@ final class SpeechService {
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
     private var isStopping = false
+    private var hasGrantedPermissions = false
+    private var isPrepared = false
     
     init() {
         recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
@@ -36,6 +38,10 @@ final class SpeechService {
     
     // MARK: - Permissions
     func requestPermissions() async -> Bool {
+        if hasGrantedPermissions {
+            return true
+        }
+
         let speechStatus = await withCheckedContinuation { continuation in
             SFSpeechRecognizer.requestAuthorization { status in
                 continuation.resume(returning: status)
@@ -53,7 +59,19 @@ final class SpeechService {
             state = .error("Microphone permission denied.")
         }
 
+        hasGrantedPermissions = microphoneGranted
         return microphoneGranted
+    }
+
+    func prepareForRecording() async {
+        guard hasGrantedPermissions, !isPrepared else { return }
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.record, mode: .measurement, options: .duckOthers)
+            isPrepared = true
+        } catch {
+            state = .error(error.localizedDescription)
+        }
     }
     
     // MARK: - Start Recording
@@ -66,9 +84,13 @@ final class SpeechService {
         transcript = ""
         state = .recording
         isStopping = false
+        await Task.yield()
         
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.record, mode: .measurement, options: .duckOthers)
+        if !isPrepared {
+            try session.setCategory(.record, mode: .measurement, options: .duckOthers)
+            isPrepared = true
+        }
         try session.setActive(true, options: .notifyOthersOnDeactivation)
         
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
