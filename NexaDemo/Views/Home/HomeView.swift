@@ -2,51 +2,81 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(AuthViewModel.self) private var authVM
+    @Environment(HomeRouter.self) private var homeRouter
+    @Environment(AppSheetManager.self) private var sheetManager
+    @Environment(AppTabRouter.self) private var tabRouter
+
+    @State private var showWidgetSheet = false
 
     var body: some View {
         ZStack {
-            Color(hex: "0A0A0F").ignoresSafeArea()
+            Color("BackgroundDark").ignoresSafeArea()
 
-            VStack(spacing: 24) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Dobrodošao,")
-                            .foregroundStyle(.gray)
-                            .font(.subheadline)
-
-                        Text(authVM.currentUser?.fullName ?? "Korisnik")
-                            .foregroundStyle(.white)
-                            .font(.title3.bold())
-                    }
-
-                    Spacer()
-
-                    Button { authVM.logout() } label: {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .foregroundStyle(.gray)
-                            .font(.title2)
-                    }
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
-
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(hex: "1A1A2E"))
-                    .frame(height: 100)
-                    .overlay(
-                        VStack {
-                            Text("✅ Backend Connected")
-                                .foregroundStyle(.green)
-                                .font(.headline)
-                            Text(authVM.currentUser?.email ?? "")
-                                .foregroundStyle(.gray)
-                                .font(.caption)
-                        }
+            ScrollView {
+                VStack(spacing: 24) {
+                    HomeHeaderView(
+                        greeting: greetingText(),
+                        subtitle: "Here's your daily overview",
+                        profileImageURL: authVM.currentUser?.profilePicture,
+                        onNotifications: { homeRouter.push(.notifications) }
                     )
-                    .padding(.horizontal, 24)
 
-                Spacer()
+                    PremiumStatusCardView(
+                        isPremium: authVM.currentUser?.isPremium ?? false,
+                        onUpgrade: { sheetManager.present(.paywall) }
+                    )
+
+                    WidgetPreviewCardView(
+                        isPremium: authVM.currentUser?.isPremium ?? false,
+                        onAddToHome: { showWidgetSheet = true }
+                    )
+
+                    SectionTitleView(title: "Quick Actions")
+                    QuickActionsView(
+                        onQuickScan: { sheetManager.presentFullScreen(.camera) },
+                        onAIChat: { tabRouter.openAI(.chat) },
+                        onCall: { tabRouter.openConnect(.contactDetail("demo")) },
+                        onVoiceNote: { tabRouter.openProfile(.voiceNotes) }
+                    )
+
+                    SectionTitleView(title: "Recent Activity")
+                    RecentActivityView()
+
+                    SectionTitleView(title: "AI Tip of the Day")
+                    AITipCardView()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
             }
+            .scrollIndicators(.hidden)
         }
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showWidgetSheet) {
+            WidgetInstructionsView()
+        }
+    }
+
+    private func greetingText() -> String {
+        let rawName = authVM.currentUser?.fullName ?? ""
+        let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let firstName = name.split(separator: " ").first.map(String.init) ?? "there"
+        return "\(greetingPrefix(for: Date())), \(capitalizeFirstLetter(firstName))"
+    }
+
+    private func greetingPrefix(for date: Date) -> String {
+        let hour = Calendar.current.component(.hour, from: date)
+        switch hour {
+        case 0..<12:
+            return "Good morning"
+        case 12..<17:
+            return "Good afternoon"
+        default:
+            return "Good evening"
+        }
+    }
+
+    private func capitalizeFirstLetter(_ value: String) -> String {
+        guard let first = value.first else { return value }
+        return first.uppercased() + value.dropFirst()
     }
 }

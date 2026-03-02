@@ -18,7 +18,6 @@ struct ContactDetailView: View { let contactId: String; var body: some View { pl
 struct VoiceCallView: View { let channel: String; var body: some View { placeholder("Voice call: \(channel)") } }
 struct ProfileView: View { var body: some View { placeholder("Profile") } }
 struct SettingsView: View { var body: some View { placeholder("Settings") } }
-struct VoiceNotesView: View { var body: some View { placeholder("Voice Notes") } }
 struct NotificationsView: View { var body: some View { placeholder("Notifications") } }
 
 private func placeholder(_ text: String) -> some View {

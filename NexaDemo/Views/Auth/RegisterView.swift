@@ -11,7 +11,7 @@ struct RegisterView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "0A0A0F").ignoresSafeArea()
+            Color("BackgroundDark").ignoresSafeArea()
 
             VStack(spacing: 28) {
                 HStack {
@@ -67,7 +67,7 @@ struct RegisterView: View {
                             .frame(height: 54)
                     }
                 }
-                .background(Color(hex: "E94560"))
+                .background(Color("BrandAccent"))
                 .clipShape(.rect(cornerRadius: 14))
                 .disabled(authVM.isLoading || fullName.isEmpty || email.isEmpty || password.isEmpty)
 

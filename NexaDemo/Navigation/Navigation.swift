@@ -144,23 +144,33 @@ struct AuthFlowView: View {
 // MARK: - Main Tab View
 
 struct MainTabView: View {
+    @Environment(AppTabRouter.self) private var tabRouter
+
     var body: some View {
-        TabView {
-            HomeFlowView()
-                .tabItem { Label("Home", systemImage: "house.fill") }
+        @Bindable var tabRouter = tabRouter
 
-            AIFlowView()
-                .tabItem { Label("AI Studio", systemImage: "camera.viewfinder") }
+        TabView(selection: $tabRouter.selectedTab) {
+            Tab("Home", systemImage: "house.fill", value: .home) {
+                HomeFlowView()
+            }
 
-            PremiumFlowView()
-                .tabItem { Label("Premium", systemImage: "creditcard.fill") }
+            Tab("AI Studio", systemImage: "camera.viewfinder", value: .ai) {
+                AIFlowView()
+            }
 
-            ConnectFlowView()
-                .tabItem { Label("Connect", systemImage: "phone.fill") }
+            Tab("Premium", systemImage: "creditcard.fill", value: .premium) {
+                PremiumFlowView()
+            }
 
-            ProfileFlowView()
-                .tabItem { Label("Profile", systemImage: "person.fill") }
+            Tab("Connect", systemImage: "phone.fill", value: .connect) {
+                ConnectFlowView()
+            }
+
+            Tab("Profile", systemImage: "person.fill", value: .profile) {
+                ProfileFlowView()
+            }
         }
+        .tint(Color("BrandAccent"))
     }
 }
 
@@ -183,6 +193,8 @@ struct HomeFlowView: View {
 
 struct AIFlowView: View {
     @State private var router = AIRouter()
+    @Environment(AppTabRouter.self) private var tabRouter
+
     var body: some View {
         NavigationStack(path: $router.path) {
             AIStudioView()
@@ -194,6 +206,11 @@ struct AIFlowView: View {
                 }
         }
         .environment(router)
+        .task(id: tabRouter.pendingAIRoute) {
+            guard let route = tabRouter.pendingAIRoute else { return }
+            router.push(route)
+            tabRouter.pendingAIRoute = nil
+        }
     }
 }
 
@@ -214,6 +231,8 @@ struct PremiumFlowView: View {
 
 struct ConnectFlowView: View {
     @State private var router = ConnectRouter()
+    @Environment(AppTabRouter.self) private var tabRouter
+
     var body: some View {
         NavigationStack(path: $router.path) {
             ConnectView()
@@ -225,11 +244,18 @@ struct ConnectFlowView: View {
                 }
         }
         .environment(router)
+        .task(id: tabRouter.pendingConnectRoute) {
+            guard let route = tabRouter.pendingConnectRoute else { return }
+            router.push(route)
+            tabRouter.pendingConnectRoute = nil
+        }
     }
 }
 
 struct ProfileFlowView: View {
     @State private var router = ProfileRouter()
+    @Environment(AppTabRouter.self) private var tabRouter
+
     var body: some View {
         NavigationStack(path: $router.path) {
             UserUpdateView()
@@ -242,5 +268,10 @@ struct ProfileFlowView: View {
                 }
         }
         .environment(router)
+        .task(id: tabRouter.pendingProfileRoute) {
+            guard let route = tabRouter.pendingProfileRoute else { return }
+            router.push(route)
+            tabRouter.pendingProfileRoute = nil
+        }
     }
 }

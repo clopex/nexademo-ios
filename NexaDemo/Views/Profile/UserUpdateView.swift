@@ -24,6 +24,7 @@ struct UserUpdateView: View {
 
     var body: some View {
         let isUpdateDisabled = viewModel.isUpdatingProfile || viewModel.isUploadingImage || !viewModel.hasChanges
+        let isInitialSetup = authVM.needsProfileSetup
 
         ZStack {
             Color("Background").ignoresSafeArea()
@@ -232,24 +233,30 @@ struct UserUpdateView: View {
                     }
                 }
             }
+
+            if isInitialSetup {
+                VStack {
+                    Spacer()
+                    UpdateProfileBottomButtonView(
+                        isDisabled: isUpdateDisabled,
+                        action: handleUpdate
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 24)
+                }
+            }
         }
         .navigationTitle("Update Profile")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    Task {
-                        if let user = await viewModel.updateProfile() {
-                            authVM.currentUser = user
-                            authVM.needsProfileSetup = false
-                            viewModel.prefill(from: user, force: true)
-                        }
+                if !isInitialSetup {
+                    Button(action: handleUpdate) {
+                        Image(systemName: "person.fill.checkmark")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(isUpdateDisabled ? Color.gray : Color.black)
                     }
-                } label: {
-                    Image(systemName: "person.fill.checkmark")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(isUpdateDisabled ? Color.gray : Color.black)
+                    .disabled(isUpdateDisabled)
                 }
-                .disabled(isUpdateDisabled)
             }
         }
         .sheet(isPresented: $showCamera) {
@@ -304,6 +311,16 @@ struct UserUpdateView: View {
             showCamera = true
         } else {
             viewModel.imageStatusMessage = "Camera not available."
+        }
+    }
+
+    private func handleUpdate() {
+        Task {
+            if let user = await viewModel.updateProfile() {
+                authVM.currentUser = user
+                authVM.needsProfileSetup = false
+                viewModel.prefill(from: user, force: true)
+            }
         }
     }
 }

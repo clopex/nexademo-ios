@@ -30,7 +30,7 @@ struct AuthTextField: View {
             }
         }
         .padding(16)
-        .background(Color(hex: "1A1A2E"))
+        .background(Color("CardBackground"))
         .clipShape(.rect(cornerRadius: 12))
         .overlay {
             RoundedRectangle(cornerRadius: 12)
