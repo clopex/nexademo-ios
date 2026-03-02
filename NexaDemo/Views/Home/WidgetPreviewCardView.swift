@@ -2,6 +2,7 @@ import SwiftUI
 
 struct WidgetPreviewCardView: View {
     let isPremium: Bool
+    let voiceUsageText: String
     let onAddToHome: () -> Void
 
     var body: some View {
@@ -31,7 +32,7 @@ struct WidgetPreviewCardView: View {
                 UsageRowView(
                     icon: "mic.fill",
                     title: "Voice",
-                    value: usageValue(freeValue: "0:45 / 1:00"),
+                    value: voiceUsageText,
                     iconColor: Color("BrandAccent")
                 )
 

@@ -23,6 +23,14 @@ final class SpeechService {
     var transcript = ""
     var state: RecognitionState = .idle
     var isRecording: Bool { state == .recording }
+    var audioLevel: Double = 0
+    var recordingDuration: TimeInterval = 0
+    var effectiveRecordingDuration: TimeInterval {
+        if let recordingStartedAt, isRecording {
+            return Date().timeIntervalSince(recordingStartedAt)
+        }
+        return recordingDuration
+    }
     
     private var recognizer: SFSpeechRecognizer?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
@@ -31,6 +39,7 @@ final class SpeechService {
     private var isStopping = false
     private var hasGrantedPermissions = false
     private var isPrepared = false
+    private var recordingStartedAt: Date?
     
     init() {
         recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
@@ -83,6 +92,9 @@ final class SpeechService {
         
         transcript = ""
         state = .recording
+        audioLevel = 0
+        recordingDuration = 0
+        recordingStartedAt = Date()
         isStopping = false
         await Task.yield()
         
@@ -102,6 +114,27 @@ final class SpeechService {
         
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             self?.recognitionRequest?.append(buffer)
+            guard let channelData = buffer.floatChannelData?[0] else { return }
+
+            let frameCount = Int(buffer.frameLength)
+            guard frameCount > 0 else { return }
+
+            var sum: Float = 0
+            for index in 0..<frameCount {
+                let sample = channelData[index]
+                sum += sample * sample
+            }
+
+            let rms = sqrt(sum / Float(frameCount))
+            let db = 20 * log10(max(rms, 0.000_01))
+            let mapped = (Double(db) + 50.0) / 50.0
+            let normalized = min(1.0, max(0, mapped))
+            let gated = normalized < 0.08 ? 0 : normalized
+
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.audioLevel = (self.audioLevel * 0.55) + (gated * 0.45)
+            }
         }
         
         audioEngine.prepare()
@@ -127,6 +160,11 @@ final class SpeechService {
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
         recognitionRequest?.endAudio()
+        if let recordingStartedAt {
+            recordingDuration = Date().timeIntervalSince(recordingStartedAt)
+        }
+        self.recordingStartedAt = nil
+        audioLevel = 0
         state = .processing
         isStopping = true
     }
@@ -149,6 +187,8 @@ final class SpeechService {
         recognitionTask?.cancel()
         recognitionTask = nil
         try? AVAudioSession.sharedInstance().setActive(false)
+        recordingStartedAt = nil
+        audioLevel = 0
         state = .idle
         isStopping = false
     }

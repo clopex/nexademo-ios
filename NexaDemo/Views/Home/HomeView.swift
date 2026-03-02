@@ -1,10 +1,12 @@
 import SwiftUI
+import SwiftData
 
 struct HomeView: View {
     @Environment(AuthViewModel.self) private var authVM
     @Environment(HomeRouter.self) private var homeRouter
     @Environment(AppSheetManager.self) private var sheetManager
     @Environment(AppTabRouter.self) private var tabRouter
+    @Query(sort: \VoiceNote.createdAt, order: .reverse) private var voiceNotes: [VoiceNote]
 
     @State private var showWidgetSheet = false
 
@@ -28,6 +30,7 @@ struct HomeView: View {
 
                     WidgetPreviewCardView(
                         isPremium: authVM.currentUser?.isPremium ?? false,
+                        voiceUsageText: voiceUsageText,
                         onAddToHome: { showWidgetSheet = true }
                     )
 
@@ -78,5 +81,19 @@ struct HomeView: View {
     private func capitalizeFirstLetter(_ value: String) -> String {
         guard let first = value.first else { return value }
         return first.uppercased() + value.dropFirst()
+    }
+
+    private var voiceUsageText: String {
+        let count = voiceNotes.count
+        let totalDuration = VoiceNoteDurationStore.totalDuration(for: voiceNotes)
+        return "\(count) notes • \(formattedDuration(totalDuration))"
+    }
+
+    private func formattedDuration(_ seconds: TimeInterval) -> String {
+        let clamped = max(0, Int(seconds.rounded()))
+        let minutes = clamped / 60
+        let remainingSeconds = clamped % 60
+        let paddedSeconds = remainingSeconds < 10 ? "0\(remainingSeconds)" : "\(remainingSeconds)"
+        return "\(minutes):\(paddedSeconds)"
     }
 }

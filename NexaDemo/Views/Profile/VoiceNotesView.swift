@@ -40,8 +40,8 @@ struct VoiceNotesView: View {
         .navigationTitle("Voice Notes")
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showingRecorder) {
-            VoiceRecorderSheet(speechService: speechService) { text in
-                saveNote(text: text)
+            VoiceRecorderSheet(speechService: speechService) { text, duration in
+                saveNote(text: text, duration: duration)
             }
         }
         .sheet(item: $editingNote) { note in
@@ -49,15 +49,17 @@ struct VoiceNotesView: View {
         }
     }
 
-    private func saveNote(text: String) {
+    private func saveNote(text: String, duration: TimeInterval) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         let note = VoiceNote(text: trimmed)
         modelContext.insert(note)
+        VoiceNoteDurationStore.setDuration(duration, for: note.id)
     }
 
     private func deleteNote(_ note: VoiceNote) {
         modelContext.delete(note)
+        VoiceNoteDurationStore.removeDuration(for: note.id)
     }
 }
 

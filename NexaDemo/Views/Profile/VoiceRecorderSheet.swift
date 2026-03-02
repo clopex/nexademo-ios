@@ -3,7 +3,7 @@ import SwiftUI
 struct VoiceRecorderSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Bindable var speechService: SpeechService
-    let onSave: (String) -> Void
+    let onSave: (String, TimeInterval) -> Void
 
     @State private var hasPermission = false
     @State private var editedText = ""
@@ -47,6 +47,25 @@ struct VoiceRecorderSheet: View {
                     editedText = newValue
                 }
 
+                if speechService.isRecording {
+                    VoiceAmplitudeView(
+                        isRecording: speechService.isRecording,
+                        level: speechService.audioLevel
+                    )
+                    .transition(
+                        .asymmetric(
+                            insertion: .modifier(
+                                active: AmplitudeTransitionEffect(opacity: 0, scale: 0.92, y: 10, blur: 8),
+                                identity: AmplitudeTransitionEffect(opacity: 1, scale: 1, y: 0, blur: 0)
+                            ),
+                            removal: .modifier(
+                                active: AmplitudeTransitionEffect(opacity: 0, scale: 0.98, y: -6, blur: 4),
+                                identity: AmplitudeTransitionEffect(opacity: 1, scale: 1, y: 0, blur: 0)
+                            )
+                        )
+                    )
+                }
+
                 VoiceRecorderActionButton(isRecording: speechService.isRecording) {
                     Task {
                         if !hasPermission {
@@ -77,7 +96,8 @@ struct VoiceRecorderSheet: View {
                 Spacer()
 
                 Button {
-                    onSave(editedText)
+                    let capturedDuration = speechService.effectiveRecordingDuration
+                    onSave(editedText, capturedDuration)
                     speechService.stopRecording()
                     dismiss()
                 } label: {
@@ -96,6 +116,7 @@ struct VoiceRecorderSheet: View {
                 .padding(.bottom, 32)
             }
         }
+        .animation(.spring(response: 0.42, dampingFraction: 0.84, blendDuration: 0.16), value: speechService.isRecording)
         .task {
             hasPermission = await speechService.requestPermissions()
             if hasPermission {
@@ -106,8 +127,23 @@ struct VoiceRecorderSheet: View {
 }
 
 #Preview {
-    VoiceRecorderSheet(speechService: previewSpeechService) { _ in }
+    VoiceRecorderSheet(speechService: previewSpeechService) { _, _ in }
 }
 
 @MainActor
 private let previewSpeechService = SpeechService()
+
+private struct AmplitudeTransitionEffect: ViewModifier {
+    let opacity: Double
+    let scale: CGFloat
+    let y: CGFloat
+    let blur: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(opacity)
+            .scaleEffect(scale)
+            .offset(y: y)
+            .blur(radius: blur)
+    }
+}
