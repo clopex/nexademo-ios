@@ -7,6 +7,7 @@ struct VoiceNotesView: View {
     @State private var speechService: SpeechService
     @State private var showingRecorder = false
     @State private var editingNote: VoiceNote?
+    @State private var isRecorderPrewarmed = false
 
     @MainActor
     init() {
@@ -32,7 +33,7 @@ struct VoiceNotesView: View {
             VStack {
                 Spacer()
                 VoiceNotesFloatingButton {
-                    showingRecorder = true
+                    Task { await presentRecorder() }
                 }
                 .padding(.bottom, 24)
             }
@@ -40,7 +41,10 @@ struct VoiceNotesView: View {
         .navigationTitle("Voice Notes")
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showingRecorder) {
-            VoiceRecorderSheet(speechService: speechService) { text, duration in
+            VoiceRecorderSheet(
+                speechService: speechService,
+                initialHasPermission: isRecorderPrewarmed
+            ) { text, duration in
                 saveNote(text: text, duration: duration)
             }
         }
@@ -60,6 +64,17 @@ struct VoiceNotesView: View {
     private func deleteNote(_ note: VoiceNote) {
         modelContext.delete(note)
         VoiceNoteDurationStore.removeDuration(for: note.id)
+    }
+
+    @MainActor
+    private func presentRecorder() async {
+        let granted = await speechService.requestPermissions()
+        if granted {
+            await speechService.prepareForRecording()
+        }
+
+        isRecorderPrewarmed = granted
+        showingRecorder = true
     }
 }
 

@@ -3,10 +3,22 @@ import SwiftUI
 struct VoiceRecorderSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Bindable var speechService: SpeechService
+    let initialHasPermission: Bool
     let onSave: (String, TimeInterval) -> Void
 
-    @State private var hasPermission = false
+    @State private var hasPermission: Bool
     @State private var editedText = ""
+
+    init(
+        speechService: SpeechService,
+        initialHasPermission: Bool = false,
+        onSave: @escaping (String, TimeInterval) -> Void
+    ) {
+        self.speechService = speechService
+        self.initialHasPermission = initialHasPermission
+        self.onSave = onSave
+        _hasPermission = State(initialValue: initialHasPermission)
+    }
 
     var body: some View {
         ZStack {
@@ -118,7 +130,9 @@ struct VoiceRecorderSheet: View {
         }
         .animation(.spring(response: 0.42, dampingFraction: 0.84, blendDuration: 0.16), value: speechService.isRecording)
         .task {
-            hasPermission = await speechService.requestPermissions()
+            if !hasPermission {
+                hasPermission = await speechService.requestPermissions()
+            }
             if hasPermission {
                 await speechService.prepareForRecording()
             }
@@ -127,7 +141,7 @@ struct VoiceRecorderSheet: View {
 }
 
 #Preview {
-    VoiceRecorderSheet(speechService: previewSpeechService) { _, _ in }
+    VoiceRecorderSheet(speechService: previewSpeechService, initialHasPermission: true) { _, _ in }
 }
 
 @MainActor
