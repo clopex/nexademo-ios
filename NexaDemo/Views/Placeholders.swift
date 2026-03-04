@@ -4,11 +4,8 @@ struct ForgotPasswordView: View { var body: some View { placeholder("Forgot Pass
 struct EditProfileView: View { var body: some View { placeholder("Edit Profile") } }
 struct PaywallView: View { var body: some View { placeholder("Paywall") } }
 struct ImagePickerView: View { var body: some View { placeholder("Image Picker") } }
-struct CameraView: View { var body: some View { placeholder("Camera") } }
 struct OnboardingView: View { var body: some View { placeholder("Onboarding") } }
 struct VideoCallView: View { let channel: String; var body: some View { placeholder("Video call: \(channel)") } }
-struct AIStudioView: View { var body: some View { placeholder("AI Studio") } }
-struct AIChatView: View { var body: some View { placeholder("AI Chat") } }
 struct ScanResultView: View { let result: String; var body: some View { placeholder("Scan: \(result)") } }
 struct PaymentView: View { var body: some View { placeholder("Payment") } }
 struct TransactionHistoryView: View { var body: some View { placeholder("Transactions") } }

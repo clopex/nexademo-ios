@@ -29,7 +29,7 @@ struct RootView: View {
         }
         .fullScreenCover(item: $sheetManager.activeFullScreen) { screen in
             switch screen {
-            case .camera: CameraView()
+            case .camera(let viewModel): CameraMLView(viewModel: viewModel)
             case .onboarding: OnboardingView()
             case .videoCall(let channel): VideoCallView(channel: channel)
             }

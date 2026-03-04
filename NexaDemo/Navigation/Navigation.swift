@@ -11,11 +11,12 @@ enum AuthRoute: Hashable {
 
 enum HomeRoute: Hashable {
     case notifications
+    case aiChat
 }
 
 enum AIRoute: Hashable {
     case scanResult(String)
-    case chat
+    case chat(String? = nil)
 }
 
 enum PremiumRoute: Hashable {
@@ -43,10 +44,19 @@ enum AppSheet: Identifiable {
 }
 
 enum AppFullScreen: Identifiable {
-    case camera
+    case camera(AIStudioViewModel)
     case onboarding
     case videoCall(String)
-    var id: String { String(describing: self) }
+    var id: String {
+        switch self {
+        case .camera(let viewModel):
+            return "camera-\(ObjectIdentifier(viewModel).hashValue)"
+        case .onboarding:
+            return "onboarding"
+        case .videoCall(let channel):
+            return "videoCall-\(channel)"
+        }
+    }
 }
 
 // MARK: - Routers
@@ -184,6 +194,7 @@ struct HomeFlowView: View {
                 .navigationDestination(for: HomeRoute.self) { route in
                     switch route {
                     case .notifications: NotificationsView()
+                    case .aiChat: AIChatView()
                     }
                 }
         }
@@ -197,11 +208,11 @@ struct AIFlowView: View {
 
     var body: some View {
         NavigationStack(path: $router.path) {
-            AIStudioView()
+            CameraStudioView()
                 .navigationDestination(for: AIRoute.self) { route in
                     switch route {
                     case .scanResult(let result): ScanResultView(result: result)
-                    case .chat: AIChatView()
+                    case .chat(let message): AIChatView(initialMessage: message)
                     }
                 }
         }

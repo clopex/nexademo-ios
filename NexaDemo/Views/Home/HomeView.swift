@@ -36,8 +36,8 @@ struct HomeView: View {
 
                     SectionTitleView(title: "Quick Actions")
                     QuickActionsView(
-                        onQuickScan: { sheetManager.presentFullScreen(.camera) },
-                        onAIChat: { tabRouter.openAI(.chat) },
+                        onQuickScan: { tabRouter.openAI() },
+                        onAIChat: { homeRouter.push(.aiChat) },
                         onCall: { tabRouter.openConnect(.contactDetail("demo")) },
                         onVoiceNote: { tabRouter.openProfile(.voiceNotes) }
                     )
