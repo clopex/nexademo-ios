@@ -1,8 +1,9 @@
 import SwiftUI
 
 struct WidgetPreviewCardView: View {
-    let isPremium: Bool
+    let aiScansUsageText: String
     let voiceUsageText: String
+    let callsUsageText: String
     let onAddToHome: () -> Void
 
     var body: some View {
@@ -25,7 +26,7 @@ struct WidgetPreviewCardView: View {
                 UsageRowView(
                     icon: "camera.viewfinder",
                     title: "AI Scans",
-                    value: usageValue(freeValue: "3 / 5"),
+                    value: aiScansUsageText,
                     iconColor: Color("BrandAccent")
                 )
 
@@ -39,7 +40,7 @@ struct WidgetPreviewCardView: View {
                 UsageRowView(
                     icon: "phone.fill",
                     title: "Calls",
-                    value: usageValue(freeValue: "0 / ∞"),
+                    value: callsUsageText,
                     iconColor: Color("BrandAccent")
                 )
             }
@@ -49,7 +50,4 @@ struct WidgetPreviewCardView: View {
         .clipShape(.rect(cornerRadius: 16))
     }
 
-    private func usageValue(freeValue: String) -> String {
-        isPremium ? "∞" : freeValue
-    }
 }

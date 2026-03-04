@@ -13,15 +13,24 @@ import UIKit
 final class AIStudioViewModel {
     var detectedObjects: [DetectedObject] = []
     var capturedImage: UIImage?
+    var aiScansToday = AIScanAttemptStore.shared.todayCount()
+    let freeScanLimit = 5
     var hasResults: Bool { !detectedObjects.isEmpty }
 
     func updateResults(objects: [DetectedObject], image: UIImage?) {
+        let newCount = AIScanAttemptStore.shared.registerScanAttempt()
         detectedObjects = objects
         capturedImage = image
+        aiScansToday = newCount
+        WidgetDataService.shared.updateAIScanUsage(todayCount: newCount, freeLimit: freeScanLimit)
     }
 
     func clearResults() {
         detectedObjects = []
         capturedImage = nil
+    }
+
+    func refreshDailyUsage() {
+        aiScansToday = AIScanAttemptStore.shared.todayCount()
     }
 }

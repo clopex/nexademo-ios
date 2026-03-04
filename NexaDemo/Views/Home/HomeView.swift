@@ -9,6 +9,7 @@ struct HomeView: View {
     @Query(sort: \VoiceNote.createdAt, order: .reverse) private var voiceNotes: [VoiceNote]
 
     @State private var showWidgetSheet = false
+    @State private var aiScansToday = 0
 
     var body: some View {
         ZStack {
@@ -29,8 +30,9 @@ struct HomeView: View {
                     )
 
                     WidgetPreviewCardView(
-                        isPremium: authVM.currentUser?.isPremium ?? false,
+                        aiScansUsageText: aiScansUsageText,
                         voiceUsageText: voiceUsageText,
+                        callsUsageText: callsUsageText,
                         onAddToHome: { showWidgetSheet = true }
                     )
 
@@ -56,6 +58,20 @@ struct HomeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showWidgetSheet) {
             WidgetInstructionsView()
+        }
+        .onAppear {
+            refreshUsageState()
+            syncWidgetUsage()
+        }
+        .onChange(of: voiceNotes.count) { _, _ in
+            syncWidgetUsage()
+        }
+        .onChange(of: authVM.currentUser?.isPremium) { _, _ in
+            refreshUsageState()
+            syncWidgetUsage()
+        }
+        .onChange(of: authVM.currentUser?.fullName) { _, _ in
+            syncWidgetUsage()
         }
     }
 
@@ -89,11 +105,40 @@ struct HomeView: View {
         return "\(count) notes • \(formattedDuration(totalDuration))"
     }
 
+    private var aiScansUsageText: String {
+        let isPremium = authVM.currentUser?.isPremium ?? false
+        return isPremium ? "\(aiScansToday) / ∞" : "\(aiScansToday) / 5"
+    }
+
+    private var callsUsageText: String {
+        "0 / ∞"
+    }
+
     private func formattedDuration(_ seconds: TimeInterval) -> String {
         let clamped = max(0, Int(seconds.rounded()))
         let minutes = clamped / 60
         let remainingSeconds = clamped % 60
         let paddedSeconds = remainingSeconds < 10 ? "0\(remainingSeconds)" : "\(remainingSeconds)"
         return "\(minutes):\(paddedSeconds)"
+    }
+
+    private func refreshUsageState() {
+        aiScansToday = AIScanAttemptStore.shared.todayCount()
+    }
+
+    private func syncWidgetUsage() {
+        let totalVoiceSeconds = Int(VoiceNoteDurationStore.totalDuration(for: voiceNotes).rounded())
+        let isPremium = authVM.currentUser?.isPremium ?? false
+        let userName = authVM.currentUser?.fullName ?? ""
+        let scansToday = AIScanAttemptStore.shared.todayCount()
+        aiScansToday = scansToday
+
+        WidgetDataService.shared.syncUsage(
+            isPremium: isPremium,
+            userName: userName,
+            voiceNotesCount: voiceNotes.count,
+            voiceSecondsToday: totalVoiceSeconds,
+            aiScansToday: scansToday
+        )
     }
 }

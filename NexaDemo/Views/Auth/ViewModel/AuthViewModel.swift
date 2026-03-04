@@ -95,7 +95,10 @@ final class AuthViewModel {
             isLoggedIn = true
             needsProfileSetup = false
         } catch {
-            logout()
+            await KeychainService.shared.deleteToken()
+            currentUser = nil
+            isLoggedIn = false
+            needsProfileSetup = false
         }
     }
 
@@ -111,6 +114,15 @@ final class AuthViewModel {
         if shouldClear {
             await KeychainService.shared.deleteToken()
         }
+
+        guard await KeychainService.shared.getToken() != nil else {
+            currentUser = nil
+            isLoggedIn = false
+            needsProfileSetup = false
+            isBootstrapping = false
+            return
+        }
+
         await loadCurrentUser()
         isBootstrapping = false
     }

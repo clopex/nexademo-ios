@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct VoiceNotesView: View {
+    @Environment(AuthViewModel.self) private var authVM
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \VoiceNote.createdAt, order: .reverse) private var notes: [VoiceNote]
     @State private var speechService: SpeechService
@@ -59,11 +60,15 @@ struct VoiceNotesView: View {
         let note = VoiceNote(text: trimmed)
         modelContext.insert(note)
         VoiceNoteDurationStore.setDuration(duration, for: note.id)
+        let allNotes = [note] + notes
+        syncWidgetUsage(with: allNotes)
     }
 
     private func deleteNote(_ note: VoiceNote) {
         modelContext.delete(note)
         VoiceNoteDurationStore.removeDuration(for: note.id)
+        let remaining = notes.filter { $0.id != note.id }
+        syncWidgetUsage(with: remaining)
     }
 
     @MainActor
@@ -75,6 +80,21 @@ struct VoiceNotesView: View {
 
         isRecorderPrewarmed = granted
         showingRecorder = true
+    }
+
+    private func syncWidgetUsage(with sourceNotes: [VoiceNote]) {
+        let isPremium = authVM.currentUser?.isPremium ?? false
+        let userName = authVM.currentUser?.fullName ?? ""
+        let scansToday = AIScanAttemptStore.shared.todayCount()
+        let totalVoiceSeconds = Int(VoiceNoteDurationStore.totalDuration(for: sourceNotes).rounded())
+
+        WidgetDataService.shared.syncUsage(
+            isPremium: isPremium,
+            userName: userName,
+            voiceNotesCount: sourceNotes.count,
+            voiceSecondsToday: totalVoiceSeconds,
+            aiScansToday: scansToday
+        )
     }
 }
 

@@ -4,7 +4,15 @@ import SwiftUI
 // MARK: - Provider
 struct NexaDemoProvider: TimelineProvider {
     private let appGroupID = "group.com.codify.nexademo"
-    private let key = "widget_data"
+    private let payloadKey = "widget_data"
+    private let aiScansTodayKey = "widget_ai_scans_today"
+    private let aiScansLimitKey = "widget_ai_scans_limit"
+    private let voiceNotesCountKey = "widget_voice_notes_count"
+    private let voiceSecondsTodayKey = "widget_voice_seconds_today"
+    private let voiceSecondsLimitKey = "widget_voice_seconds_limit"
+    private let callsTodayKey = "widget_calls_today"
+    private let isPremiumKey = "widget_is_premium"
+    private let userNameKey = "widget_user_name"
 
     func placeholder(in context: Context) -> NexaDemoEntry {
         NexaDemoEntry(date: Date(), data: .default)
@@ -22,11 +30,39 @@ struct NexaDemoProvider: TimelineProvider {
     }
 
     private func loadData() -> WidgetData {
-        guard let defaults = UserDefaults(suiteName: appGroupID),
-              let data = defaults.data(forKey: key),
-              let decoded = try? JSONDecoder().decode(WidgetData.self, from: data)
-        else { return .default }
-        return decoded
+        guard let defaults = UserDefaults(suiteName: appGroupID) else {
+            return .default
+        }
+
+        if let data = defaults.data(forKey: payloadKey),
+           let decoded = try? JSONDecoder().decode(WidgetData.self, from: data) {
+            return decoded
+        }
+
+        if let data = defaults.data(forKey: payloadKey),
+           let legacy = try? JSONDecoder().decode(LegacyWidgetData.self, from: data) {
+            return WidgetData(
+                aiScansToday: legacy.aiScansToday,
+                aiScansLimit: legacy.aiScansLimit,
+                voiceNotesCount: 0,
+                voiceSecondsToday: legacy.voiceSecondsToday,
+                voiceSecondsLimit: legacy.voiceSecondsLimit,
+                callsToday: legacy.callsToday,
+                isPremium: legacy.isPremium,
+                userName: legacy.userName
+            )
+        }
+
+        return WidgetData(
+            aiScansToday: defaults.integer(forKey: aiScansTodayKey),
+            aiScansLimit: value(forKey: aiScansLimitKey, in: defaults, fallback: WidgetData.default.aiScansLimit),
+            voiceNotesCount: defaults.integer(forKey: voiceNotesCountKey),
+            voiceSecondsToday: defaults.integer(forKey: voiceSecondsTodayKey),
+            voiceSecondsLimit: value(forKey: voiceSecondsLimitKey, in: defaults, fallback: WidgetData.default.voiceSecondsLimit),
+            callsToday: defaults.integer(forKey: callsTodayKey),
+            isPremium: defaults.bool(forKey: isPremiumKey),
+            userName: defaults.string(forKey: userNameKey) ?? ""
+        )
     }
 }
 
@@ -40,6 +76,7 @@ struct NexaDemoEntry: TimelineEntry {
 struct NexaDemoWidgetView: View {
     let entry: NexaDemoEntry
     @Environment(\.widgetFamily) var family
+    private let widgetBackground = Color.black
 
     var body: some View {
         switch family {
@@ -55,7 +92,7 @@ struct NexaDemoWidgetView: View {
     // MARK: - Small Widget (2x2)
     private var smallWidget: some View {
         ZStack {
-            Color(red: 0.04, green: 0.04, blue: 0.06)
+            widgetBackground
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
@@ -76,12 +113,17 @@ struct NexaDemoWidgetView: View {
                 )
                 statRow(
                     icon: "mic.fill",
-                    value: formatVoice(entry.data.voiceSecondsToday, limit: entry.data.voiceSecondsLimit, isPremium: entry.data.isPremium),
+                    value: formatVoice(
+                        notesCount: entry.data.voiceNotesCount,
+                        seconds: entry.data.voiceSecondsToday,
+                        limit: entry.data.voiceSecondsLimit,
+                        isPremium: entry.data.isPremium
+                    ),
                     label: "Voice"
                 )
                 statRow(
                     icon: "phone.fill",
-                    value: entry.data.isPremium ? "\(entry.data.callsToday)" : "—",
+                    value: "\(entry.data.callsToday) / ∞",
                     label: "Calls"
                 )
             }
@@ -92,7 +134,7 @@ struct NexaDemoWidgetView: View {
     // MARK: - Medium Widget (4x2)
     private var mediumWidget: some View {
         ZStack {
-            Color(red: 0.04, green: 0.04, blue: 0.06)
+            widgetBackground
 
             HStack(spacing: 16) {
                 // Left — stats
@@ -119,12 +161,17 @@ struct NexaDemoWidgetView: View {
                     )
                     statRow(
                         icon: "mic.fill",
-                        value: formatVoice(entry.data.voiceSecondsToday, limit: entry.data.voiceSecondsLimit, isPremium: entry.data.isPremium),
+                        value: formatVoice(
+                            notesCount: entry.data.voiceNotesCount,
+                            seconds: entry.data.voiceSecondsToday,
+                            limit: entry.data.voiceSecondsLimit,
+                            isPremium: entry.data.isPremium
+                        ),
                         label: "Voice"
                     )
                     statRow(
                         icon: "phone.fill",
-                        value: entry.data.isPremium ? "\(entry.data.callsToday)" : "Locked",
+                        value: "\(entry.data.callsToday) / ∞",
                         label: "Calls"
                     )
                 }
@@ -177,9 +224,19 @@ struct NexaDemoWidgetView: View {
         }
     }
 
-    private func formatVoice(_ seconds: Int, limit: Int, isPremium: Bool) -> String {
-        if isPremium { return "\(seconds / 60):\(String(format: "%02d", seconds % 60))" }
-        return "\(seconds / 60):\(String(format: "%02d", seconds % 60))/1:00"
+    private func formatVoice(notesCount: Int, seconds: Int, limit: Int, isPremium: Bool) -> String {
+        let minutes = seconds / 60
+        let remaining = seconds % 60
+        let padded = remaining < 10 ? "0\(remaining)" : "\(remaining)"
+        let duration = "\(minutes):\(padded)"
+
+        if isPremium {
+            return "\(notesCount) • \(duration)"
+        }
+        let limitMinutes = limit / 60
+        let limitSeconds = limit % 60
+        let paddedLimitSeconds = limitSeconds < 10 ? "0\(limitSeconds)" : "\(limitSeconds)"
+        return "\(notesCount) • \(duration)/\(limitMinutes):\(paddedLimitSeconds)"
     }
 }
 
@@ -190,12 +247,29 @@ struct NexaDemoWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: NexaDemoProvider()) { entry in
             NexaDemoWidgetView(entry: entry)
-                .containerBackground(Color(red: 0.04, green: 0.04, blue: 0.06), for: .widget)
+                .containerBackground(Color.black, for: .widget)
         }
+        .contentMarginsDisabled()
+        .containerBackgroundRemovable(false)
         .configurationDisplayName("NexaDemo")
         .description("Track your daily AI usage at a glance.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
+}
+
+private struct LegacyWidgetData: Codable {
+    var aiScansToday: Int
+    var aiScansLimit: Int
+    var voiceSecondsToday: Int
+    var voiceSecondsLimit: Int
+    var callsToday: Int
+    var isPremium: Bool
+    var userName: String
+}
+
+private func value(forKey key: String, in defaults: UserDefaults, fallback: Int) -> Int {
+    guard defaults.object(forKey: key) != nil else { return fallback }
+    return max(1, defaults.integer(forKey: key))
 }
 
 // MARK: - Preview
@@ -205,6 +279,7 @@ struct NexaDemoWidget: Widget {
     NexaDemoEntry(date: .now, data: WidgetData(
         aiScansToday: 3,
         aiScansLimit: 5,
+        voiceNotesCount: 4,
         voiceSecondsToday: 45,
         voiceSecondsLimit: 60,
         callsToday: 0,

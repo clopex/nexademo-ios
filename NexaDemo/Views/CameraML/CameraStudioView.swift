@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CameraStudioView: View {
+    @Environment(AuthViewModel.self) private var authVM
     @Environment(AppSheetManager.self) private var sheetManager
     @Environment(AIRouter.self) private var router
     @State private var viewModel = AIStudioViewModel()
@@ -36,6 +37,7 @@ struct CameraStudioView: View {
 
                     // Scan button
                     Button {
+                        guard canStartScan else { return }
                         sheetManager.presentFullScreen(.camera(viewModel))
                     } label: {
                         HStack(spacing: 12) {
@@ -47,10 +49,15 @@ struct CameraStudioView: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Color("BrandAccent"))
+                        .background(canStartScan ? Color("BrandAccent") : Color.gray.opacity(0.45))
                         .clipShape(RoundedRectangle(cornerRadius: 28))
                     }
+                    .disabled(!canStartScan)
                     .padding(.horizontal, 20)
+
+                    Text(scanUsageLabel)
+                        .font(.footnote)
+                        .foregroundStyle(.gray)
 
                     // Last Scan Results
                     if viewModel.hasResults {
@@ -145,5 +152,22 @@ struct CameraStudioView: View {
         }
         .navigationTitle("AI Studio")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            viewModel.refreshDailyUsage()
+        }
+    }
+
+    private var isPremium: Bool {
+        authVM.currentUser?.isPremium ?? false
+    }
+
+    private var canStartScan: Bool {
+        isPremium || viewModel.aiScansToday < viewModel.freeScanLimit
+    }
+
+    private var scanUsageLabel: String {
+        isPremium
+        ? "Today's scans: \(viewModel.aiScansToday)/∞"
+        : "Today's scans: \(viewModel.aiScansToday)/\(viewModel.freeScanLimit)"
     }
 }
