@@ -10,6 +10,7 @@
 		E9915A0F2F578E3300C20518 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E9915A0E2F578E3300C20518 /* WidgetKit.framework */; };
 		E9915A112F578E3300C20518 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E9915A102F578E3300C20518 /* SwiftUI.framework */; };
 		E9915A202F578E3500C20518 /* NexaDemoWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E9915A0C2F578E3300C20518 /* NexaDemoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E9915A322F58B0F700C20518 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = E9915A312F58B0F700C20518 /* StripePaymentSheet */; };
 		E99FBABE2F505DE4003F366B /* ImageKitIO in Frameworks */ = {isa = PBXBuildFile; productRef = E99FBABD2F505DE4003F366B /* ImageKitIO */; };
 /* End PBXBuildFile section */
 
@@ -95,6 +96,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E9915A322F58B0F700C20518 /* StripePaymentSheet in Frameworks */,
 				E99FBABE2F505DE4003F366B /* ImageKitIO in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -176,6 +178,7 @@
 			name = NexaDemo;
 			packageProductDependencies = (
 				E99FBABD2F505DE4003F366B /* ImageKitIO */,
+				E9915A312F58B0F700C20518 /* StripePaymentSheet */,
 			);
 			productName = NexaDemo;
 			productReference = E9CE24FE2F4DBBEA0051E3FD /* NexaDemo.app */;
@@ -210,6 +213,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				E99FBABC2F505DE4003F366B /* XCRemoteSwiftPackageReference "imagekit-ios" */,
+				E9915A302F58B0F700C20518 /* XCRemoteSwiftPackageReference "stripe-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E9CE24FF2F4DBBEA0051E3FD /* Products */;
@@ -585,6 +589,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		E9915A302F58B0F700C20518 /* XCRemoteSwiftPackageReference "stripe-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stripe/stripe-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 25.7.1;
+			};
+		};
 		E99FBABC2F505DE4003F366B /* XCRemoteSwiftPackageReference "imagekit-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/imagekit-developer/imagekit-ios.git";
@@ -596,6 +608,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		E9915A312F58B0F700C20518 /* StripePaymentSheet */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9915A302F58B0F700C20518 /* XCRemoteSwiftPackageReference "stripe-ios" */;
+			productName = StripePaymentSheet;
+		};
 		E99FBABD2F505DE4003F366B /* ImageKitIO */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E99FBABC2F505DE4003F366B /* XCRemoteSwiftPackageReference "imagekit-ios" */;

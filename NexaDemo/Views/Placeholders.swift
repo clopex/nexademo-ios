@@ -9,7 +9,6 @@ struct VideoCallView: View { let channel: String; var body: some View { placehol
 struct ScanResultView: View { let result: String; var body: some View { placeholder("Scan: \(result)") } }
 struct PaymentView: View { var body: some View { placeholder("Payment") } }
 struct TransactionHistoryView: View { var body: some View { placeholder("Transactions") } }
-struct PremiumView: View { var body: some View { placeholder("Premium") } }
 struct ConnectView: View { var body: some View { placeholder("Connect") } }
 struct ContactDetailView: View { let contactId: String; var body: some View { placeholder("Contact: \(contactId)") } }
 struct VoiceCallView: View { let channel: String; var body: some View { placeholder("Voice call: \(channel)") } }

@@ -35,6 +35,25 @@ struct NetworkClient: Sendable {
     }
 
     func performRequest<T: Decodable>(_ request: URLRequest) async throws -> T {
+        let data = try await performRequestData(request)
+        let bodyString = String(data: data, encoding: .utf8) ?? "<empty>"
+        let urlString = request.url?.absoluteString ?? "unknown"
+
+        do {
+            let decoded = try JSONDecoder().decode(T.self, from: data)
+            print("Network success \(urlString)")
+            return decoded
+        } catch {
+            print("Network decode error \(urlString) body: \(bodyString)")
+            throw error
+        }
+    }
+
+    func performRequestWithoutResponse(_ request: URLRequest) async throws {
+        _ = try await performRequestData(request)
+    }
+
+    private func performRequestData(_ request: URLRequest) async throws -> Data {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkClientError.invalidResponse
@@ -44,14 +63,8 @@ struct NetworkClient: Sendable {
         let bodyString = String(data: data, encoding: .utf8) ?? "<empty>"
 
         if (200...299).contains(httpResponse.statusCode) {
-            do {
-                let decoded = try JSONDecoder().decode(T.self, from: data)
-                print("Network success [\(httpResponse.statusCode)] \(urlString)")
-                return decoded
-            } catch {
-                print("Network decode error [\(httpResponse.statusCode)] \(urlString) body: \(bodyString)")
-                throw error
-            }
+            print("Network success [\(httpResponse.statusCode)] \(urlString)")
+            return data
         }
 
         print("Network error [\(httpResponse.statusCode)] \(urlString) body: \(bodyString)")
