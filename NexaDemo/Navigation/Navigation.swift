@@ -39,6 +39,7 @@ enum ProfileRoute: Hashable {
 enum AppSheet: Identifiable {
     case editProfile
     case paywall
+    case revenueCatPaywall
     case imagePicker
     var id: String { String(describing: self) }
 }

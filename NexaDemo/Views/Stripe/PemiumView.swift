@@ -10,6 +10,7 @@ import StripePaymentSheet
 
 struct PremiumView: View {
     @Environment(AuthViewModel.self) private var authVM
+    @Environment(AppSheetManager.self) private var sheetManager
     @State private var stripeService = StripeService()
     @State private var showSuccess = false
 
@@ -88,10 +89,99 @@ struct PremiumView: View {
 
                     // CTA Button
                     if !(authVM.currentUser?.isPremium ?? false) {
-                        PaymentButton(stripeService: stripeService) {
-                            await handlePaymentResult()
+                        VStack(spacing: 12) {
+                            Text("Choose Payment Method")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 20)
+
+                            // Stripe option
+                            Button {
+                                Task {
+                                    guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                          let viewController = windowScene.windows.first?.rootViewController else { return }
+                                    await stripeService.startPayment(from: viewController)
+                                    await handlePaymentResult()
+                                }
+                            } label: {
+                                HStack(spacing: 16) {
+                                    Image(systemName: "creditcard.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 48, height: 48)
+                                        .background(Color("PremiumGradientStart"))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Pay with Stripe")
+                                            .font(.body.weight(.semibold))
+                                            .foregroundStyle(.white)
+                                        Text("One-time payment • $4.99")
+                                            .font(.caption)
+                                            .foregroundStyle(.gray)
+                                    }
+
+                                    Spacer()
+
+                                    if stripeService.isLoading {
+                                        ProgressView()
+                                            .tint(.gray)
+                                    } else {
+                                        Image(systemName: "chevron.right")
+                                            .foregroundStyle(.gray)
+                                    }
+                                }
+                                .padding(16)
+                                .background(Color("CardBackground"))
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(stripeService.isLoading)
+                            .padding(.horizontal, 20)
+
+                            // RevenueCat option
+                            Button {
+                                sheetManager.present(.revenueCatPaywall)
+                            } label: {
+                                HStack(spacing: 16) {
+                                    Image(systemName: "arrow.triangle.2.circlepath")
+                                        .font(.system(size: 24))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 48, height: 48)
+                                        .background(Color("PremiumGradientEnd"))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Subscribe with RevenueCat")
+                                            .font(.body.weight(.semibold))
+                                            .foregroundStyle(.white)
+                                        Text("Monthly subscription • $9.99/mo")
+                                            .font(.caption)
+                                            .foregroundStyle(.gray)
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: "chevron.right")
+                                        .foregroundStyle(.gray)
+                                }
+                                .padding(16)
+                                .background(Color("CardBackground"))
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(stripeService.isLoading)
+                            .padding(.horizontal, 20)
                         }
-                        .padding(.horizontal, 20)
                     } else {
                         // Already premium
                         HStack {
@@ -115,7 +205,10 @@ struct PremiumView: View {
         .navigationTitle("Premium")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showSuccess) {
-            PaymentSuccessSheet()
+            PaymentSuccessSheet {
+                await authVM.loadCurrentUser()
+                return true
+            }
         }
     }
 
@@ -255,6 +348,7 @@ struct PaymentButton: View {
 // MARK: - Payment Success Sheet
 struct PaymentSuccessSheet: View {
     @Environment(\.dismiss) private var dismiss
+    let onDismiss: @MainActor () async -> Bool
 
     var body: some View {
         ZStack {
@@ -285,7 +379,11 @@ struct PaymentSuccessSheet: View {
                 Spacer()
 
                 Button {
-                    dismiss()
+                    Task { @MainActor in
+                        if await onDismiss() {
+                            dismiss()
+                        }
+                    }
                 } label: {
                     Text("Start Exploring")
                         .font(.headline)

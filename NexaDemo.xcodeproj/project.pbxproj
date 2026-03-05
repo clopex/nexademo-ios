@@ -12,6 +12,7 @@
 		E9915A202F578E3500C20518 /* NexaDemoWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E9915A0C2F578E3300C20518 /* NexaDemoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E9915A322F58B0F700C20518 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = E9915A312F58B0F700C20518 /* StripePaymentSheet */; };
 		E99FBABE2F505DE4003F366B /* ImageKitIO in Frameworks */ = {isa = PBXBuildFile; productRef = E99FBABD2F505DE4003F366B /* ImageKitIO */; };
+		E9B3B7802F5984B700EA91FB /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = E9B3B77F2F5984B700EA91FB /* RevenueCat */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -98,6 +99,7 @@
 			files = (
 				E9915A322F58B0F700C20518 /* StripePaymentSheet in Frameworks */,
 				E99FBABE2F505DE4003F366B /* ImageKitIO in Frameworks */,
+				E9B3B7802F5984B700EA91FB /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -179,6 +181,7 @@
 			packageProductDependencies = (
 				E99FBABD2F505DE4003F366B /* ImageKitIO */,
 				E9915A312F58B0F700C20518 /* StripePaymentSheet */,
+				E9B3B77F2F5984B700EA91FB /* RevenueCat */,
 			);
 			productName = NexaDemo;
 			productReference = E9CE24FE2F4DBBEA0051E3FD /* NexaDemo.app */;
@@ -214,6 +217,7 @@
 			packageReferences = (
 				E99FBABC2F505DE4003F366B /* XCRemoteSwiftPackageReference "imagekit-ios" */,
 				E9915A302F58B0F700C20518 /* XCRemoteSwiftPackageReference "stripe-ios" */,
+				E9B3B77E2F5984B700EA91FB /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E9CE24FF2F4DBBEA0051E3FD /* Products */;
@@ -605,6 +609,14 @@
 				minimumVersion = 3.1.0;
 			};
 		};
+		E9B3B77E2F5984B700EA91FB /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.60.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -617,6 +629,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E99FBABC2F505DE4003F366B /* XCRemoteSwiftPackageReference "imagekit-ios" */;
 			productName = ImageKitIO;
+		};
+		E9B3B77F2F5984B700EA91FB /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9B3B77E2F5984B700EA91FB /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
