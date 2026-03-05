@@ -251,7 +251,12 @@ struct ConnectFlowView: View {
                 .navigationDestination(for: ConnectRoute.self) { route in
                     switch route {
                     case .contactDetail(let id): ContactDetailView(contactId: id)
-                    case .activeCall(let channel): VoiceCallView(channel: channel)
+                    case .activeCall(let channel):
+                        VoiceCallView(
+                            channel: channel,
+                            contactName: DemoContact.samples.first { $0.channelName == channel }?.name ?? "Demo Contact",
+                            contactInitials: DemoContact.samples.first { $0.channelName == channel }?.initials ?? "DC"
+                        )
                     }
                 }
         }

@@ -5,13 +5,9 @@ struct EditProfileView: View { var body: some View { placeholder("Edit Profile")
 struct PaywallView: View { var body: some View { placeholder("Paywall") } }
 struct ImagePickerView: View { var body: some View { placeholder("Image Picker") } }
 struct OnboardingView: View { var body: some View { placeholder("Onboarding") } }
-struct VideoCallView: View { let channel: String; var body: some View { placeholder("Video call: \(channel)") } }
 struct ScanResultView: View { let result: String; var body: some View { placeholder("Scan: \(result)") } }
 struct PaymentView: View { var body: some View { placeholder("Payment") } }
 struct TransactionHistoryView: View { var body: some View { placeholder("Transactions") } }
-struct ConnectView: View { var body: some View { placeholder("Connect") } }
-struct ContactDetailView: View { let contactId: String; var body: some View { placeholder("Contact: \(contactId)") } }
-struct VoiceCallView: View { let channel: String; var body: some View { placeholder("Voice call: \(channel)") } }
 struct ProfileView: View { var body: some View { placeholder("Profile") } }
 struct SettingsView: View { var body: some View { placeholder("Settings") } }
 struct NotificationsView: View { var body: some View { placeholder("Notifications") } }

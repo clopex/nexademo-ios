@@ -23,4 +23,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
         return true
     }
+
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        for scene in application.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for window in windowScene.windows {
+                // Keep appearance automatic (no forced dark mode).
+                window.overrideUserInterfaceStyle = .unspecified
+            }
+        }
+    }
 }

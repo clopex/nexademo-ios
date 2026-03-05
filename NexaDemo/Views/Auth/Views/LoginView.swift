@@ -150,6 +150,7 @@ struct LoginView: View {
         case .email:
             withAnimation(.easeInOut(duration: 0.25)) { stage = .password }
         case .password:
+            focusField = nil
             Task { await authVM.login(email: email, password: password) }
         }
     }

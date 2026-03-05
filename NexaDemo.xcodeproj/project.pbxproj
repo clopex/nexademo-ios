@@ -13,6 +13,7 @@
 		E9915A322F58B0F700C20518 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = E9915A312F58B0F700C20518 /* StripePaymentSheet */; };
 		E99FBABE2F505DE4003F366B /* ImageKitIO in Frameworks */ = {isa = PBXBuildFile; productRef = E99FBABD2F505DE4003F366B /* ImageKitIO */; };
 		E9B3B7802F5984B700EA91FB /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = E9B3B77F2F5984B700EA91FB /* RevenueCat */; };
+		E9B3B78B2F59B2B400EA91FB /* RtcBasic in Frameworks */ = {isa = PBXBuildFile; productRef = E9B3B78A2F59B2B400EA91FB /* RtcBasic */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -100,6 +101,7 @@
 				E9915A322F58B0F700C20518 /* StripePaymentSheet in Frameworks */,
 				E99FBABE2F505DE4003F366B /* ImageKitIO in Frameworks */,
 				E9B3B7802F5984B700EA91FB /* RevenueCat in Frameworks */,
+				E9B3B78B2F59B2B400EA91FB /* RtcBasic in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -182,6 +184,7 @@
 				E99FBABD2F505DE4003F366B /* ImageKitIO */,
 				E9915A312F58B0F700C20518 /* StripePaymentSheet */,
 				E9B3B77F2F5984B700EA91FB /* RevenueCat */,
+				E9B3B78A2F59B2B400EA91FB /* RtcBasic */,
 			);
 			productName = NexaDemo;
 			productReference = E9CE24FE2F4DBBEA0051E3FD /* NexaDemo.app */;
@@ -218,6 +221,7 @@
 				E99FBABC2F505DE4003F366B /* XCRemoteSwiftPackageReference "imagekit-ios" */,
 				E9915A302F58B0F700C20518 /* XCRemoteSwiftPackageReference "stripe-ios" */,
 				E9B3B77E2F5984B700EA91FB /* XCRemoteSwiftPackageReference "purchases-ios" */,
+				E9B3B7892F59B2B400EA91FB /* XCRemoteSwiftPackageReference "AgoraRtcEngine_iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E9CE24FF2F4DBBEA0051E3FD /* Products */;
@@ -486,7 +490,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -538,7 +542,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -617,6 +621,14 @@
 				minimumVersion = 5.60.0;
 			};
 		};
+		E9B3B7892F59B2B400EA91FB /* XCRemoteSwiftPackageReference "AgoraRtcEngine_iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AgoraIO/AgoraRtcEngine_iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.6.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -634,6 +646,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E9B3B77E2F5984B700EA91FB /* XCRemoteSwiftPackageReference "purchases-ios" */;
 			productName = RevenueCat;
+		};
+		E9B3B78A2F59B2B400EA91FB /* RtcBasic */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9B3B7892F59B2B400EA91FB /* XCRemoteSwiftPackageReference "AgoraRtcEngine_iOS" */;
+			productName = RtcBasic;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
