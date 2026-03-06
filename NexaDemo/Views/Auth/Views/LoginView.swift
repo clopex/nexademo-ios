@@ -1,4 +1,5 @@
 import SwiftUI
+import LocalAuthentication
 
 struct LoginView: View {
     @Environment(AuthViewModel.self) private var authVM
@@ -58,6 +59,15 @@ struct LoginView: View {
                         .offset(x: stage == .password ? 0 : 120)
                     }
                     .animation(.easeInOut(duration: 0.25), value: stage)
+
+                    if authVM.isBiometricLoginAvailable {
+                        Button(action: loginWithBiometrics) {
+                            Label(biometricButtonTitle, systemImage: biometricSystemImage)
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.black.opacity(0.8))
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 Spacer()
 
@@ -85,13 +95,10 @@ struct LoginView: View {
             }
         }
         .toolbar(authVM.isLoading ? .hidden : .visible, for: .navigationBar)
-        .task {
-            if email.isEmpty { focusField = .email }
-        }
         .task(id: stage) {
             switch stage {
             case .email:
-                focusField = email.isEmpty ? .email : nil
+                focusField = nil
             case .password:
                 focusField = password.isEmpty ? .password : nil
             }
@@ -145,6 +152,28 @@ struct LoginView: View {
         isContinueDisabled ? .gray.opacity(0.5) : .black
     }
 
+    private var biometricSystemImage: String {
+        switch BiometricAuthService.biometryType() {
+        case .faceID:
+            return "faceid"
+        case .touchID:
+            return "touchid"
+        default:
+            return "lock.fill"
+        }
+    }
+
+    private var biometricButtonTitle: String {
+        switch BiometricAuthService.biometryType() {
+        case .faceID:
+            return "Continue with Face ID"
+        case .touchID:
+            return "Continue with Touch ID"
+        default:
+            return "Continue with Biometrics"
+        }
+    }
+
     private func advance() {
         switch stage {
         case .email:
@@ -153,6 +182,11 @@ struct LoginView: View {
             focusField = nil
             Task { await authVM.login(email: email, password: password) }
         }
+    }
+
+    private func loginWithBiometrics() {
+        focusField = nil
+        Task { await authVM.biometricLogin() }
     }
 
     private func goBack() {

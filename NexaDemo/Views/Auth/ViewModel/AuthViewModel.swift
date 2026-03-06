@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import LocalAuthentication
 
 @MainActor
 @Observable
@@ -9,6 +10,7 @@ final class AuthViewModel {
     var needsProfileSetup = false
     var isBootstrapping = true
     var isLoading = false
+    var isBiometricLoginAvailable = false
     var errorMessage: String?
 
     init() {
@@ -28,9 +30,11 @@ final class AuthViewModel {
         do {
             let response = try await AuthService.shared.register(fullName: fullName, email: email, password: password)
             await KeychainService.shared.saveToken(response.token)
+            BiometricAuthService.setLoginPending(false)
             currentUser = response.user
             isLoggedIn = true
             needsProfileSetup = true
+            await refreshBiometricLoginAvailability()
         } catch {
             setError(error)
         }
@@ -45,9 +49,11 @@ final class AuthViewModel {
         do {
             let response = try await AuthService.shared.login(email: email, password: password)
             await KeychainService.shared.saveToken(response.token)
+            BiometricAuthService.setLoginPending(false)
             currentUser = response.user
             isLoggedIn = true
             needsProfileSetup = false
+            await refreshBiometricLoginAvailability()
         } catch {
             setError(error)
         }
@@ -62,9 +68,11 @@ final class AuthViewModel {
         do {
             let response = try await AuthService.shared.googleLogin(googleId: googleId, email: email, fullName: fullName, profilePicture: profilePicture)
             await KeychainService.shared.saveToken(response.token)
+            BiometricAuthService.setLoginPending(false)
             currentUser = response.user
             isLoggedIn = true
             needsProfileSetup = false
+            await refreshBiometricLoginAvailability()
         } catch {
             setError(error)
         }
@@ -79,9 +87,11 @@ final class AuthViewModel {
         do {
             let response = try await AuthService.shared.appleLogin(appleId: appleId, email: email, fullName: fullName)
             await KeychainService.shared.saveToken(response.token)
+            BiometricAuthService.setLoginPending(false)
             currentUser = response.user
             isLoggedIn = true
             needsProfileSetup = false
+            await refreshBiometricLoginAvailability()
         } catch {
             setError(error)
         }
@@ -96,14 +106,68 @@ final class AuthViewModel {
             needsProfileSetup = false
         } catch {
             await KeychainService.shared.deleteToken()
+            BiometricAuthService.setLoginPending(false)
             currentUser = nil
             isLoggedIn = false
             needsProfileSetup = false
         }
+
+        await refreshBiometricLoginAvailability()
+    }
+
+    func biometricLogin() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            guard BiometricAuthService.isEnabled() else {
+                throw BiometricAuthError.biometricDisabled
+            }
+
+            guard await KeychainService.shared.getToken() != nil else {
+                throw BiometricAuthError.missingToken
+            }
+
+            let biometryName = switch BiometricAuthService.biometryType() {
+            case .faceID: "Face ID"
+            case .touchID: "Touch ID"
+            default: "Biometric"
+            }
+
+            try await BiometricAuthService.authenticate(
+                reason: "Use \(biometryName) to log in to NexaDemo."
+            )
+
+            BiometricAuthService.setLoginPending(false)
+            await loadCurrentUser()
+
+            if !isLoggedIn {
+                throw BiometricAuthError.invalidSession
+            }
+        } catch {
+            setError(error)
+            await refreshBiometricLoginAvailability()
+        }
+
+        isLoading = false
+    }
+
+    func refreshBiometricLoginAvailability() async {
+        let hasToken = await KeychainService.shared.getToken() != nil
+        isBiometricLoginAvailable = BiometricAuthService.isEnabled() && hasToken
     }
 
     func logout() {
-        Task { await KeychainService.shared.deleteToken() }
+        let shouldKeepToken = BiometricAuthService.isEnabled()
+
+        if shouldKeepToken {
+            BiometricAuthService.setLoginPending(true)
+            isBiometricLoginAvailable = true
+        } else {
+            isBiometricLoginAvailable = false
+            Task { await KeychainService.shared.deleteToken() }
+        }
+
         currentUser = nil
         isLoggedIn = false
         needsProfileSetup = false
@@ -113,9 +177,21 @@ final class AuthViewModel {
         isBootstrapping = true
         if shouldClear {
             await KeychainService.shared.deleteToken()
+            BiometricAuthService.setLoginPending(false)
         }
 
-        guard await KeychainService.shared.getToken() != nil else {
+        let hasToken = await KeychainService.shared.getToken() != nil
+        isBiometricLoginAvailable = BiometricAuthService.isEnabled() && hasToken
+
+        guard hasToken else {
+            currentUser = nil
+            isLoggedIn = false
+            needsProfileSetup = false
+            isBootstrapping = false
+            return
+        }
+
+        if BiometricAuthService.isLoginPending() {
             currentUser = nil
             isLoggedIn = false
             needsProfileSetup = false

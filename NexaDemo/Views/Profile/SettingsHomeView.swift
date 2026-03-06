@@ -269,7 +269,7 @@ struct BiometricSetupView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             checkBiometricAvailability()
-            isEnabled = UserDefaults.standard.bool(forKey: "biometricEnabled")
+            isEnabled = BiometricAuthService.isEnabled()
         }
     }
 
@@ -303,8 +303,8 @@ struct BiometricSetupView: View {
 
             if success {
                 if let email = authVM.currentUser?.email {
-                    UserDefaults.standard.set(true, forKey: "biometricEnabled")
-                    UserDefaults.standard.set(email, forKey: "biometricEmail")
+                    BiometricAuthService.enable(email: email)
+                    await authVM.refreshBiometricLoginAvailability()
                     showSuccess = true
                     Task {
                         try? await Task.sleep(for: .seconds(2))
@@ -323,8 +323,10 @@ struct BiometricSetupView: View {
     }
 
     private func disableBiometric() {
-        UserDefaults.standard.removeObject(forKey: "biometricEnabled")
-        UserDefaults.standard.removeObject(forKey: "biometricEmail")
+        BiometricAuthService.disable()
+        Task {
+            await authVM.refreshBiometricLoginAvailability()
+        }
     }
 }
 
