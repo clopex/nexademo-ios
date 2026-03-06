@@ -30,4 +30,11 @@ final class AppTabRouter {
         selectedTab = .profile
         pendingProfileRoute = route
     }
+
+    func reset() {
+        selectedTab = .home
+        pendingAIRoute = nil
+        pendingConnectRoute = nil
+        pendingProfileRoute = nil
+    }
 }

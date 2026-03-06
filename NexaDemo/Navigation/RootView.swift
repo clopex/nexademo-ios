@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AuthViewModel.self) private var authVM
     @Environment(AppSheetManager.self) private var sheetManager
+    @Environment(AppTabRouter.self) private var tabRouter
     @Environment(RevenueCatService.self) private var rcService
     
     var body: some View {
@@ -22,9 +23,15 @@ struct RootView: View {
             }
         }
         .onChange(of: authVM.isLoggedIn) { _, isLoggedIn in
-            if isLoggedIn, let user = authVM.currentUser {
-                rcService.configure(userId: user.id)
-                Task { await rcService.checkPremiumStatus() }
+            if isLoggedIn {
+                tabRouter.reset()
+
+                if let user = authVM.currentUser {
+                    rcService.configure(userId: user.id)
+                    Task { await rcService.checkPremiumStatus() }
+                }
+            } else {
+                tabRouter.reset()
             }
         }
         .sheet(item: $sheetManager.activeSheet) { sheet in

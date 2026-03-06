@@ -202,6 +202,8 @@ struct EmailLoginView: View {
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .multilineTextAlignment(.center)
+                            .foregroundStyle(.black)
+                            .tint(.black)
                             .focused($focusField, equals: focus)
                     } else {
                         TextField("", text: text)
@@ -209,6 +211,8 @@ struct EmailLoginView: View {
                             .keyboardType(.emailAddress)
                             .autocorrectionDisabled()
                             .multilineTextAlignment(.center)
+                            .foregroundStyle(.black)
+                            .tint(.black)
                             .focused($focusField, equals: focus)
                     }
                 }
