@@ -81,7 +81,7 @@ struct SettingsHomeView: View {
             }
         }
         .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -141,8 +141,10 @@ struct SettingsRow: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.gray)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
+            .contentShape(.rect)
         }
         .buttonStyle(.plain)
     }
@@ -327,6 +329,14 @@ struct BiometricSetupView: View {
         Task {
             await authVM.refreshBiometricLoginAvailability()
         }
+    }
+}
+
+#Preview {
+    NavigationStack {
+        SettingsHomeView()
+            .environment(AuthViewModel())
+            .environment(ProfileRouter())
     }
 }
 
