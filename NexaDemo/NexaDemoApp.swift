@@ -7,6 +7,7 @@ struct NexaDemoApp: App {
     @State private var authVM = AuthViewModel()
     @State private var sheetManager = AppSheetManager()
     @State private var tabRouter = AppTabRouter()
+    @State private var alarmLaunchRouter = AlarmLaunchRouter()
     @State private var rcService = RevenueCatService()
 
     var body: some Scene {
@@ -15,8 +16,9 @@ struct NexaDemoApp: App {
                 .environment(authVM)
                 .environment(sheetManager)
                 .environment(tabRouter)
+                .environment(alarmLaunchRouter)
                 .environment(rcService)
-                .modelContainer(for: VoiceNote.self)
+                .modelContainer(for: [VoiceNote.self, VoiceNoteReminder.self])
         }
     }
 }

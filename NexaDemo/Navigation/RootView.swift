@@ -1,9 +1,11 @@
 import SwiftUI
 
 struct RootView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(AuthViewModel.self) private var authVM
     @Environment(AppSheetManager.self) private var sheetManager
     @Environment(AppTabRouter.self) private var tabRouter
+    @Environment(AlarmLaunchRouter.self) private var alarmLaunchRouter
     @Environment(RevenueCatService.self) private var rcService
     
     var body: some View {
@@ -32,6 +34,25 @@ struct RootView: View {
                 }
             } else {
                 tabRouter.reset()
+            }
+        }
+        .task {
+            await AlarmLiveActivityService.shared.endExpiredActivities()
+            if alarmLaunchRouter.consumePendingLaunch(tabRouter: tabRouter) {
+                await AlarmLiveActivityService.shared.endAllActivities()
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            Task { await AlarmLiveActivityService.shared.endExpiredActivities() }
+            if alarmLaunchRouter.consumePendingLaunch(tabRouter: tabRouter) {
+                Task { await AlarmLiveActivityService.shared.endAllActivities() }
+            }
+        }
+        .onOpenURL { url in
+            let openedFromAlarm = alarmLaunchRouter.handle(url, tabRouter: tabRouter)
+            if openedFromAlarm {
+                Task { await AlarmLiveActivityService.shared.endAllActivities() }
             }
         }
         .sheet(item: $sheetManager.activeSheet) { sheet in

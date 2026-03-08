@@ -59,6 +59,7 @@
 		E9915A2D2F5792A300C20518 /* Exceptions for "NexaDemo" folder in "NexaDemoWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Services/Alarm/ReminderAlarmActivity.swift,
 				Services/AppWidget/WidgetDataService.swift,
 			);
 			target = E9915A0B2F578E3300C20518 /* NexaDemoWidgetExtension */;
@@ -474,12 +475,14 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/NexaDemo-Info.plist";
 				INFOPLIST_KEY_API_BASE_URL = "https://nexademo-backend.onrender.com/api";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We use the camera to let you take a profile photo.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "NexaDemo uses Face ID for quick and secure login.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We use the microphone to record your voice notes.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We use your photo library to choose a profile photo.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "We use speech recognition to transcribe your voice notes.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -527,12 +530,14 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/NexaDemo-Info.plist";
 				INFOPLIST_KEY_API_BASE_URL = "https://nexademo-backend.onrender.com/api";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We use the camera to let you take a profile photo.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "NexaDemo uses Face ID for quick and secure login.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We use the microphone to record your voice notes.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We use your photo library to choose a profile photo.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "We use speech recognition to transcribe your voice notes.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

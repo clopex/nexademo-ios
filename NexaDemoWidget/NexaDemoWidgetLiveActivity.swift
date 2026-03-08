@@ -1,80 +1,108 @@
-//
-//  NexaDemoWidgetLiveActivity.swift
-//  NexaDemoWidget
-//
-//  Created by Adis Mulabdic on 3. 3. 2026..
-//
-
 import ActivityKit
 import WidgetKit
 import SwiftUI
 
-struct NexaDemoWidgetAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        // Dynamic stateful properties about your activity go here!
-        var emoji: String
-    }
-
-    // Fixed non-changing properties about your activity go here!
-    var name: String
-}
-
 struct NexaDemoWidgetLiveActivity: Widget {
-    var body: some WidgetConfiguration {
-        ActivityConfiguration(for: NexaDemoWidgetAttributes.self) { context in
-            // Lock screen/banner UI goes here
-            VStack {
-                Text("Hello \(context.state.emoji)")
-            }
-            .activityBackgroundTint(Color.cyan)
-            .activitySystemActionForegroundColor(Color.black)
+    private let accentColor = Color("BrandAccent")
+    private let activityURL = URL(string: "nexademo://alarm/home")
 
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: ReminderAlarmAttributes.self) { context in
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "alarm.fill")
+                        .foregroundStyle(accentColor)
+
+                    Text(context.state.label)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.72))
+                        .lineLimit(1)
+
+                    Spacer(minLength: 8)
+
+                    Text(context.state.scheduledAt, style: .time)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.72))
+                }
+
+                Text(context.state.title)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+
+                Text(context.state.scheduledAt, style: .timer)
+                    .font(.title3)
+                    .bold()
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+            }
+            .padding(14)
+            .activityBackgroundTint(Color.black)
+            .activitySystemActionForegroundColor(.white)
+            .widgetURL(activityURL)
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded UI goes here.  Compose the expanded UI through
-                // various regions, like leading/trailing/center/bottom
                 DynamicIslandExpandedRegion(.leading) {
-                    Text("Leading")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(context.state.label)
+                            .font(.caption2)
+                            .foregroundStyle(.white.opacity(0.72))
+                        Text(context.state.title)
+                            .font(.subheadline)
+                            .bold()
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: 140, alignment: .leading)
                 }
+
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text("Trailing")
+                    Text(context.state.scheduledAt, style: .time)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.8))
                 }
+
                 DynamicIslandExpandedRegion(.bottom) {
-                    Text("Bottom \(context.state.emoji)")
-                    // more content
+                    HStack(spacing: 10) {
+                        Image(systemName: "alarm.fill")
+                            .foregroundStyle(accentColor)
+
+                        Text(context.state.scheduledAt, style: .timer)
+                            .font(.headline)
+                            .bold()
+                            .foregroundStyle(.white)
+                            .monospacedDigit()
+
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             } compactLeading: {
-                Text("L")
+                Image(systemName: "alarm.fill")
+                    .foregroundStyle(accentColor)
             } compactTrailing: {
-                Text("T \(context.state.emoji)")
+                Text(context.state.scheduledAt, style: .timer)
+                    .font(.caption2)
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+                    .frame(maxWidth: 48, alignment: .trailing)
             } minimal: {
-                Text(context.state.emoji)
+                Image(systemName: "alarm.fill")
+                    .foregroundStyle(accentColor)
             }
-            .widgetURL(URL(string: "http://www.apple.com"))
-            .keylineTint(Color.red)
+            .widgetURL(activityURL)
+            .keylineTint(accentColor)
         }
     }
 }
 
-extension NexaDemoWidgetAttributes {
-    fileprivate static var preview: NexaDemoWidgetAttributes {
-        NexaDemoWidgetAttributes(name: "World")
-    }
-}
-
-extension NexaDemoWidgetAttributes.ContentState {
-    fileprivate static var smiley: NexaDemoWidgetAttributes.ContentState {
-        NexaDemoWidgetAttributes.ContentState(emoji: "😀")
-     }
-     
-     fileprivate static var starEyes: NexaDemoWidgetAttributes.ContentState {
-         NexaDemoWidgetAttributes.ContentState(emoji: "🤩")
-     }
-}
-
-#Preview("Notification", as: .content, using: NexaDemoWidgetAttributes.preview) {
-   NexaDemoWidgetLiveActivity()
+#Preview("Reminder", as: .content, using: ReminderAlarmAttributes(reminderID: UUID())) {
+    NexaDemoWidgetLiveActivity()
 } contentStates: {
-    NexaDemoWidgetAttributes.ContentState.smiley
-    NexaDemoWidgetAttributes.ContentState.starEyes
+    ReminderAlarmAttributes.ContentState(
+        title: "Review the new onboarding copy",
+        scheduledAt: Calendar.current.date(byAdding: .minute, value: 45, to: .now) ?? .now,
+        remainingSeconds: 2700,
+        label: "Next Reminder"
+    )
 }
