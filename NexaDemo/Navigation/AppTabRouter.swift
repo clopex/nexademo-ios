@@ -12,9 +12,15 @@ final class AppTabRouter {
     }
 
     var selectedTab: Tab = .home
+    var pendingHomeRoute: HomeRoute?
     var pendingAIRoute: AIRoute?
     var pendingConnectRoute: ConnectRoute?
     var pendingProfileRoute: ProfileRoute?
+
+    func openHome(_ route: HomeRoute? = nil) {
+        selectedTab = .home
+        pendingHomeRoute = route
+    }
 
     func openAI(_ route: AIRoute? = nil) {
         selectedTab = .ai
@@ -33,6 +39,7 @@ final class AppTabRouter {
 
     func reset() {
         selectedTab = .home
+        pendingHomeRoute = nil
         pendingAIRoute = nil
         pendingConnectRoute = nil
         pendingProfileRoute = nil

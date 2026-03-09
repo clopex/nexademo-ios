@@ -6,6 +6,7 @@ struct HomeView: View {
     @Environment(HomeRouter.self) private var homeRouter
     @Environment(AppSheetManager.self) private var sheetManager
     @Environment(AppTabRouter.self) private var tabRouter
+    @Environment(FocusSessionStore.self) private var focusSessionStore
     @Query(sort: \VoiceNote.createdAt, order: .reverse) private var voiceNotes: [VoiceNote]
 
     @State private var showWidgetSheet = false
@@ -29,6 +30,12 @@ struct HomeView: View {
                         onUpgrade: { sheetManager.present(.paywall) }
                     )
 
+                    if let session = focusSessionStore.activeSession {
+                        FocusSessionCardView(session: session) {
+                            Task { await focusSessionStore.endSession() }
+                        }
+                    }
+
                     WidgetPreviewCardView(
                         aiScansUsageText: aiScansUsageText,
                         voiceUsageText: voiceUsageText,
@@ -38,7 +45,11 @@ struct HomeView: View {
 
                     SectionTitleView(title: "Quick Actions")
                     QuickActionsView(
-                        onQuickScan: { tabRouter.openAI() },
+                        onAIFocus: {
+                            homeRouter.push(
+                                .focusSession(FocusAIParserService().defaultProposal())
+                            )
+                        },
                         onAIChat: { homeRouter.push(.aiChat) },
                         onCall: { tabRouter.openConnect(.contactDetail("demo")) },
                         onVoiceNote: { tabRouter.openProfile(.voiceNotes) }

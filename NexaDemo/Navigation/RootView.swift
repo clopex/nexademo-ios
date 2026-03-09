@@ -7,6 +7,7 @@ struct RootView: View {
     @Environment(AppTabRouter.self) private var tabRouter
     @Environment(AlarmLaunchRouter.self) private var alarmLaunchRouter
     @Environment(RevenueCatService.self) private var rcService
+    @Environment(FocusSessionStore.self) private var focusSessionStore
     
     var body: some View {
         @Bindable var sheetManager = sheetManager
@@ -38,13 +39,17 @@ struct RootView: View {
         }
         .task {
             await AlarmLiveActivityService.shared.endExpiredActivities()
+            await focusSessionStore.reconcileSessionState()
             if alarmLaunchRouter.consumePendingLaunch(tabRouter: tabRouter) {
                 await AlarmLiveActivityService.shared.endAllActivities()
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
-            Task { await AlarmLiveActivityService.shared.endExpiredActivities() }
+            Task {
+                await AlarmLiveActivityService.shared.endExpiredActivities()
+                await focusSessionStore.reconcileSessionState()
+            }
             if alarmLaunchRouter.consumePendingLaunch(tabRouter: tabRouter) {
                 Task { await AlarmLiveActivityService.shared.endAllActivities() }
             }

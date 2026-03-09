@@ -166,7 +166,7 @@ struct NexaAssistantView: View {
             VStack(spacing: 8) {
                 exampleChip("🎤 Create a voice note")
                 exampleChip("🤖 Ask AI about SwiftUI")
-                exampleChip("📷 Scan something")
+                exampleChip("🧠 Start a 40 minute study focus")
                 exampleChip("📞 Call Alex")
             }
 
@@ -364,6 +364,17 @@ struct NexaAssistantView: View {
                     )
                 }
 
+            case .startFocusSession:
+                let preset = FocusPreset(rawValue: command.parameters.preset ?? "") ?? .deepWork
+                let proposal = FocusSessionProposal(
+                    title: command.parameters.title ?? preset.title,
+                    durationMinutes: command.parameters.durationMinutes ?? 25,
+                    preset: preset,
+                    suggestedCategories: preset.suggestedBlocks,
+                    shouldSuggestEndReminder: true
+                )
+                tabRouter.openHome(.focusSession(proposal))
+
             case .startScan:
                 tabRouter.selectedTab = .ai
 
@@ -493,6 +504,7 @@ extension NexaAction {
         switch self {
         case .createVoiceNote: return "Creating Voice Note"
         case .openAIChat: return "Opening AI Chat"
+        case .startFocusSession: return "Preparing Focus Session"
         case .startScan: return "Starting AI Scanner"
         case .makeCall: return "Making a Call"
         case .navigate: return "Navigating"
@@ -504,6 +516,10 @@ extension NexaAction {
         switch self {
         case .createVoiceNote: return params.content ?? "New note"
         case .openAIChat: return params.message ?? "Open chat"
+        case .startFocusSession:
+            let title = params.title ?? "Focus Session"
+            let duration = params.durationMinutes ?? 25
+            return "\(title) for \(duration) minutes"
         case .startScan: return "Opening AI camera"
         case .makeCall: return "Calling \(params.contact ?? "contact")"
         case .navigate: return "Go to \(params.tab ?? "tab")"

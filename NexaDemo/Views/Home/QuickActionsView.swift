@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct QuickActionsView: View {
-    let onQuickScan: () -> Void
+    let onAIFocus: () -> Void
     let onAIChat: () -> Void
     let onCall: () -> Void
     let onVoiceNote: () -> Void
@@ -10,9 +10,9 @@ struct QuickActionsView: View {
         ScrollView(.horizontal) {
             HStack {
                 QuickActionCardView(
-                    title: "Quick Scan",
-                    systemImage: "camera.viewfinder",
-                    action: onQuickScan
+                    title: "AI Focus",
+                    systemImage: "brain.head.profile",
+                    action: onAIFocus
                 )
 
                 QuickActionCardView(

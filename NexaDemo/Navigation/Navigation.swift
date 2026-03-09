@@ -12,6 +12,7 @@ enum AuthRoute: Hashable {
 enum HomeRoute: Hashable {
     case notifications
     case aiChat
+    case focusSession(FocusSessionProposal)
 }
 
 enum AIRoute: Hashable {
@@ -29,8 +30,8 @@ enum ConnectRoute: Hashable {
 }
 
 enum ProfileRoute: Hashable {
-    case editProfile
-    case settings
+    case profile
+    case biometricSetup
     case voiceNotes
 }
 
@@ -156,32 +157,46 @@ struct AuthFlowView: View {
 
 struct MainTabView: View {
     @Environment(AppTabRouter.self) private var tabRouter
+    @State private var nexaVisible = false
 
     var body: some View {
         @Bindable var tabRouter = tabRouter
 
-        TabView(selection: $tabRouter.selectedTab) {
-            Tab("Home", systemImage: "house.fill", value: .home) {
-                HomeFlowView()
+        ZStack(alignment: .bottom) {
+            TabView(selection: $tabRouter.selectedTab) {
+                Tab("Home", systemImage: "house.fill", value: .home) {
+                    HomeFlowView()
+                }
+                Tab("AI Studio", systemImage: "camera.viewfinder", value: .ai) {
+                    AIFlowView()
+                }
+                Tab("Premium", systemImage: "creditcard.fill", value: .premium) {
+                    PremiumFlowView()
+                }
+                Tab("Connect", systemImage: "phone.fill", value: .connect) {
+                    ConnectFlowView()
+                }
+                Tab("Settings", systemImage: "gearshape.fill", value: .profile) {
+                    ProfileFlowView()
+                }
+            }
+            .tint(Color("BrandAccent"))
+
+            // Floating Nexa button
+            HStack {
+                Spacer()
+                NexaFloatingButton(isPresented: $nexaVisible)
+                    .padding(.bottom, 76)
             }
 
-            Tab("AI Studio", systemImage: "camera.viewfinder", value: .ai) {
-                AIFlowView()
-            }
-
-            Tab("Premium", systemImage: "creditcard.fill", value: .premium) {
-                PremiumFlowView()
-            }
-
-            Tab("Connect", systemImage: "phone.fill", value: .connect) {
-                ConnectFlowView()
-            }
-
-            Tab("Profile", systemImage: "person.fill", value: .profile) {
-                ProfileFlowView()
+            // Nexa overlay
+            if nexaVisible {
+                NexaAssistantView(isPresented: $nexaVisible)
+                    .zIndex(100)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
         }
-        .tint(Color("BrandAccent"))
+        .animation(.spring(response: 0.35), value: nexaVisible)
     }
 }
 
@@ -189,6 +204,8 @@ struct MainTabView: View {
 
 struct HomeFlowView: View {
     @State private var router = HomeRouter()
+    @Environment(AppTabRouter.self) private var tabRouter
+
     var body: some View {
         NavigationStack(path: $router.path) {
             HomeView()
@@ -196,10 +213,17 @@ struct HomeFlowView: View {
                     switch route {
                     case .notifications: NotificationsView()
                     case .aiChat: AIChatView()
+                    case .focusSession(let proposal):
+                        FocusSessionProposalView(proposal: proposal)
                     }
                 }
         }
         .environment(router)
+        .task(id: tabRouter.pendingHomeRoute) {
+            guard let route = tabRouter.pendingHomeRoute else { return }
+            router.push(route)
+            tabRouter.pendingHomeRoute = nil
+        }
     }
 }
 
@@ -275,11 +299,11 @@ struct ProfileFlowView: View {
 
     var body: some View {
         NavigationStack(path: $router.path) {
-            UserUpdateView()
+            SettingsHomeView()
                 .navigationDestination(for: ProfileRoute.self) { route in
                     switch route {
-                    case .editProfile: EditProfileView()
-                    case .settings: SettingsView()
+                    case .profile: UserUpdateView()
+                    case .biometricSetup: BiometricSetupView()
                     case .voiceNotes: VoiceNotesView()
                     }
                 }
