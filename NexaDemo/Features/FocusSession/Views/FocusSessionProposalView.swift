@@ -39,6 +39,30 @@ struct FocusSessionProposalView: View {
                         .font(.headline)
                         .foregroundStyle(.white)
 
+                    ScrollView(.horizontal) {
+                        HStack {
+                            ForEach([5, 10, 15, 25, 40, 60], id: \.self) { duration in
+                                Button {
+                                    editableProposal.durationMinutes = duration
+                                } label: {
+                                    Text("\(duration) min")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 10)
+                                        .background(
+                                            editableProposal.durationMinutes == duration
+                                            ? Color("BrandAccent")
+                                            : Color("PremiumGradientStart")
+                                        )
+                                        .clipShape(.capsule)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .scrollIndicators(.hidden)
+
                     Stepper(value: $editableProposal.durationMinutes, in: 5...180, step: 5) {
                         Text("\(editableProposal.durationMinutes) minutes")
                             .font(.title3)
@@ -78,7 +102,7 @@ struct FocusSessionProposalView: View {
                 .clipShape(.rect(cornerRadius: 24))
 
                 VStack(alignment: .leading, spacing: 16) {
-                    Button("Choose Apps & Websites", systemImage: "checklist") {
+                    Button {
                         Task {
                             do {
                                 try await focusSessionStore.requestAuthorizationIfNeeded()
@@ -87,13 +111,16 @@ struct FocusSessionProposalView: View {
                                 errorMessage = error.localizedDescription
                             }
                         }
+                    } label: {
+                        Label("Choose Apps & Websites", systemImage: "checklist")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(Color("PremiumGradientStart"))
+                            .clipShape(.rect(cornerRadius: 20))
+                            .contentShape(.rect)
                     }
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(Color("PremiumGradientStart"))
-                    .clipShape(.rect(cornerRadius: 20))
                     .buttonStyle(.plain)
 
                     Text(selectionSummary)
@@ -120,7 +147,7 @@ struct FocusSessionProposalView: View {
                 .background(Color("CardBackground"))
                 .clipShape(.rect(cornerRadius: 24))
 
-                Button(isStarting ? "Starting..." : "Start Session", systemImage: "sparkles") {
+                Button {
                     Task {
                         isStarting = true
                         do {
@@ -135,13 +162,16 @@ struct FocusSessionProposalView: View {
                         }
                         isStarting = false
                     }
+                } label: {
+                    Label(isStarting ? "Starting..." : "Start Session", systemImage: "sparkles")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Color("BrandAccent").opacity(canStart ? 1 : 0.35))
+                        .clipShape(.rect(cornerRadius: 28))
+                        .contentShape(.rect)
                 }
-                .font(.headline)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(Color("BrandAccent").opacity(canStart ? 1 : 0.35))
-                .clipShape(.rect(cornerRadius: 28))
                 .buttonStyle(.plain)
                 .disabled(!canStart || isStarting)
             }

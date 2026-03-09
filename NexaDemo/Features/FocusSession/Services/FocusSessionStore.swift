@@ -45,7 +45,7 @@ final class FocusSessionStore {
         }
 
         shieldService.apply(selection: persistedSelection)
-        try? monitoringService.startMonitoring(session: activeSession)
+        _ = try? monitoringService.startMonitoring(session: activeSession)
         scheduleSessionTask(for: activeSession)
     }
 
@@ -89,7 +89,7 @@ final class FocusSessionStore {
         scheduleSessionTask(for: session)
 
         do {
-            try monitoringService.startMonitoring(session: session)
+            _ = try monitoringService.startMonitoring(session: session)
         } catch {
             await endSession()
             throw error
@@ -128,7 +128,7 @@ final class FocusSessionStore {
         activeSession = state.session
         persistedSelection = state.selection
         shieldService.apply(selection: state.selection)
-        try? monitoringService.startMonitoring(session: state.session)
+        _ = try? monitoringService.startMonitoring(session: state.session)
         scheduleSessionTask(for: state.session)
     }
 

@@ -26,14 +26,17 @@ struct FocusSessionCardView: View {
                     .monospacedDigit()
             }
 
-            Button("End Session", systemImage: "xmark.circle.fill", action: onEndSession)
-                .font(.subheadline)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(Color("PremiumGradientStart"))
-                .clipShape(.rect(cornerRadius: 20))
-                .buttonStyle(.plain)
+            Button(action: onEndSession) {
+                Label("End Session", systemImage: "xmark.circle.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(Color("PremiumGradientStart"))
+                    .clipShape(.rect(cornerRadius: 20))
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
