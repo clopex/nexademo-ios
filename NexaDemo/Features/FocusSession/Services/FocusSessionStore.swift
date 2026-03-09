@@ -10,6 +10,7 @@ final class FocusSessionStore {
     private(set) var persistedSelection = FamilyActivitySelection()
 
     private let authorizationService = FocusAuthorizationService()
+    private let monitoringService = FocusMonitoringService()
     private let notificationService = FocusNotificationService()
     private let shieldService = FocusShieldService()
     private let defaults = UserDefaults(suiteName: "group.com.codify.nexademo") ?? .standard
@@ -25,6 +26,17 @@ final class FocusSessionStore {
     }
 
     func reconcileSessionState() async {
+        let persistedData = defaults.data(forKey: storageKey)
+
+        if persistedData == nil, activeSession != nil {
+            await endSession()
+            return
+        }
+
+        if activeSession == nil {
+            restorePersistedSession()
+        }
+
         guard let activeSession else { return }
 
         guard activeSession.endsAt > .now else {
@@ -33,6 +45,7 @@ final class FocusSessionStore {
         }
 
         shieldService.apply(selection: persistedSelection)
+        try? monitoringService.startMonitoring(session: activeSession)
         scheduleSessionTask(for: activeSession)
     }
 
@@ -75,6 +88,13 @@ final class FocusSessionStore {
         persist(session: session, selection: selection)
         scheduleSessionTask(for: session)
 
+        do {
+            try monitoringService.startMonitoring(session: session)
+        } catch {
+            await endSession()
+            throw error
+        }
+
         if shouldNotifyAtEnd {
             await notificationService.scheduleEndNotification(for: session)
         }
@@ -86,6 +106,7 @@ final class FocusSessionStore {
         }
         sessionTask?.cancel()
         sessionTask = nil
+        monitoringService.stopMonitoring()
         shieldService.clear()
         activeSession = nil
         persistedSelection = FamilyActivitySelection()
@@ -107,6 +128,7 @@ final class FocusSessionStore {
         activeSession = state.session
         persistedSelection = state.selection
         shieldService.apply(selection: state.selection)
+        try? monitoringService.startMonitoring(session: state.session)
         scheduleSessionTask(for: state.session)
     }
 
