@@ -14,8 +14,8 @@ final class AIChatViewModel {
     var messages: [ChatMessageModel] = []
     var isLoading = false
     var errorMessage: String?
-
-
+    
+    
     func loadHistory() async {
         do {
             messages = try await AIChatService.shared.getChatHistory()
@@ -23,7 +23,7 @@ final class AIChatViewModel {
             errorMessage = error.localizedDescription
         }
     }
-
+    
     func sendMessage(_ text: String) async {
         let userMessage = ChatMessageModel(
             id: UUID().uuidString,
@@ -34,7 +34,7 @@ final class AIChatViewModel {
         messages.append(userMessage)
         isLoading = true
         errorMessage = nil
-
+        
         do {
             let reply = try await AIChatService.shared.sendChatMessage(text)
             let assistantMessage = ChatMessageModel(
@@ -46,12 +46,14 @@ final class AIChatViewModel {
             messages.append(assistantMessage)
         } catch {
             errorMessage = error.localizedDescription
-            messages.removeLast()
+            if messages.last?.role == "user" {
+                messages.removeLast()
+            }
         }
-
+        
         isLoading = false
     }
-
+    
     func clearHistory() async {
         do {
             try await AIChatService.shared.clearChatHistory()

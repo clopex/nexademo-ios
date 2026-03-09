@@ -27,7 +27,7 @@ struct NetworkClient: Sendable {
            let url = URL(string: value) {
             return url
         }
-        return URL(string: "https://nexademo-backend.onrender.com/api")!
+        return URL(string: "https://nexademo-backend-production.up.railway.app/api")!
     }
 
     func url(for path: String) -> URL {

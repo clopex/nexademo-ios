@@ -8,6 +8,7 @@ struct FocusSessionProposalView: View {
     @State private var editableProposal: FocusSessionProposal
     @State private var selection = FamilyActivitySelection()
     @State private var shouldNotifyAtEnd: Bool
+    @State private var shouldShowLiveActivity = true
     @State private var isPickerPresented = false
     @State private var isStarting = false
     @State private var errorMessage: String?
@@ -147,6 +148,21 @@ struct FocusSessionProposalView: View {
                 .background(Color("CardBackground"))
                 .clipShape(.rect(cornerRadius: 24))
 
+                Toggle(isOn: $shouldShowLiveActivity) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Show Live Activity")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        Text("Keep the session countdown visible on the Lock Screen and Dynamic Island.")
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                }
+                .tint(Color("BrandAccent"))
+                .padding(20)
+                .background(Color("CardBackground"))
+                .clipShape(.rect(cornerRadius: 24))
+
                 Button {
                     Task {
                         isStarting = true
@@ -154,7 +170,8 @@ struct FocusSessionProposalView: View {
                             try await focusSessionStore.startSession(
                                 proposal: editableProposal,
                                 selection: selection,
-                                shouldNotifyAtEnd: shouldNotifyAtEnd
+                                shouldNotifyAtEnd: shouldNotifyAtEnd,
+                                showsLiveActivity: shouldShowLiveActivity
                             )
                             dismiss()
                         } catch {

@@ -187,6 +187,7 @@ struct MainTabView: View {
                 Spacer()
                 NexaFloatingButton(isPresented: $nexaVisible)
                     .padding(.bottom, 76)
+                    .padding(.trailing, 20)
             }
 
             // Nexa overlay

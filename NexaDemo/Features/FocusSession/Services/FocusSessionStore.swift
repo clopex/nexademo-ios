@@ -13,6 +13,7 @@ final class FocusSessionStore {
     private let monitoringService = FocusMonitoringService()
     private let notificationService = FocusNotificationService()
     private let shieldService = FocusShieldService()
+    private let liveActivityService = FocusSessionLiveActivityService.shared
     private let defaults = UserDefaults(suiteName: "group.com.codify.nexademo") ?? .standard
     private let storageKey = "focus_session_state"
     private var sessionTask: Task<Void, Never>?
@@ -45,6 +46,9 @@ final class FocusSessionStore {
         }
 
         shieldService.apply(selection: persistedSelection)
+        if activeSession.showsLiveActivity {
+            await liveActivityService.update(for: activeSession)
+        }
         _ = try? monitoringService.startMonitoring(session: activeSession)
         scheduleSessionTask(for: activeSession)
     }
@@ -56,7 +60,8 @@ final class FocusSessionStore {
     func startSession(
         proposal: FocusSessionProposal,
         selection: FamilyActivitySelection,
-        shouldNotifyAtEnd: Bool
+        shouldNotifyAtEnd: Bool,
+        showsLiveActivity: Bool
     ) async throws {
         try await requestAuthorizationIfNeeded()
 
@@ -79,7 +84,8 @@ final class FocusSessionStore {
             durationMinutes: proposal.durationMinutes,
             preset: proposal.preset,
             blockedItemsCount: blockedItemCount(for: selection),
-            shouldNotifyAtEnd: shouldNotifyAtEnd
+            shouldNotifyAtEnd: shouldNotifyAtEnd,
+            showsLiveActivity: showsLiveActivity
         )
 
         shieldService.apply(selection: selection)
@@ -98,11 +104,21 @@ final class FocusSessionStore {
         if shouldNotifyAtEnd {
             await notificationService.scheduleEndNotification(for: session)
         }
+
+        if showsLiveActivity {
+            var updatedSession = session
+            updatedSession.liveActivityID = await liveActivityService.start(for: updatedSession)
+            activeSession = updatedSession
+            persist(session: updatedSession, selection: selection)
+        }
     }
 
     func endSession() async {
         if let activeSession {
             await notificationService.cancelEndNotification(for: activeSession.id)
+            if activeSession.showsLiveActivity {
+                await liveActivityService.end(for: activeSession)
+            }
         }
         sessionTask?.cancel()
         sessionTask = nil
@@ -128,6 +144,11 @@ final class FocusSessionStore {
         activeSession = state.session
         persistedSelection = state.selection
         shieldService.apply(selection: state.selection)
+        if state.session.showsLiveActivity {
+            Task { @MainActor in
+                await liveActivityService.update(for: state.session)
+            }
+        }
         _ = try? monitoringService.startMonitoring(session: state.session)
         scheduleSessionTask(for: state.session)
     }

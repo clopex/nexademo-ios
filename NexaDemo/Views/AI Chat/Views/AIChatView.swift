@@ -11,6 +11,7 @@ struct AIChatView: View {
     @State private var viewModel = AIChatViewModel()
     @State private var speechService = SpeechService()
     @State private var messageText = ""
+    @State private var didSendInitialMessage = false
     @FocusState private var isInputFocused: Bool
     let initialMessage: String?
     
@@ -74,9 +75,14 @@ struct AIChatView: View {
         }
         .task {
             await viewModel.loadHistory()
-            if let message = initialMessage {
-                    await viewModel.sendMessage(message)
-                }
+            guard didSendInitialMessage == false,
+                  let message = initialMessage?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  message.isEmpty == false else {
+                return
+            }
+
+            didSendInitialMessage = true
+            await viewModel.sendMessage(message)
         }
         .onChange(of: speechService.transcript) { _, newValue in
             if !newValue.isEmpty {
@@ -94,7 +100,12 @@ struct AIChatView: View {
     private var inputBar: some View {
         HStack(spacing: 12) {
             HStack(spacing: 8) {
-                TextField("Message...", text: $messageText, axis: .vertical)
+                TextField(
+                    "",
+                    text: $messageText,
+                    prompt: Text("Message...").foregroundStyle(.white.opacity(0.7)),
+                    axis: .vertical
+                )
                     .lineLimit(1...4)
                     .foregroundStyle(.white)
                     .focused($isInputFocused)

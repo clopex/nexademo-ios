@@ -1,3 +1,4 @@
+import ActivityKit
 import DeviceActivity
 import Foundation
 import ManagedSettings
@@ -16,5 +17,14 @@ final class FocusActivityMonitorExtension: DeviceActivityMonitor {
 
         store.clearAllSettings()
         defaults?.removeObject(forKey: storageKey)
+        endFocusActivities()
+    }
+
+    private func endFocusActivities() {
+        for activity in Activity<FocusSessionActivityAttributes>.activities {
+            Task {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+        }
     }
 }

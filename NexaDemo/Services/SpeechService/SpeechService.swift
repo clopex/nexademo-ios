@@ -90,6 +90,8 @@ final class SpeechService {
             state = .error("Speech recognizer not available")
             return
         }
+
+        resetAudioPipeline()
         
         transcript = ""
         state = .recording
@@ -156,9 +158,11 @@ final class SpeechService {
     
     // MARK: - Stop Recording
     func stopRecording() {
-        guard audioEngine.isRunning else { return }
+        guard isRecording || audioEngine.isRunning else { return }
 
-        audioEngine.stop()
+        if audioEngine.isRunning {
+            audioEngine.stop()
+        }
         audioEngine.inputNode.removeTap(onBus: 0)
         recognitionRequest?.endAudio()
         if let recordingStartedAt {
@@ -184,6 +188,7 @@ final class SpeechService {
     }
 
     private func finishRecognition() {
+        resetAudioPipeline()
         recognitionRequest = nil
         recognitionTask?.cancel()
         recognitionTask = nil
@@ -192,5 +197,16 @@ final class SpeechService {
         audioLevel = 0
         state = .idle
         isStopping = false
+    }
+
+    private func resetAudioPipeline() {
+        if audioEngine.isRunning {
+            audioEngine.stop()
+        }
+        audioEngine.inputNode.removeTap(onBus: 0)
+        recognitionRequest?.endAudio()
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        recognitionRequest = nil
     }
 }

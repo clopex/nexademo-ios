@@ -8,11 +8,18 @@ struct HomeView: View {
     @Environment(AppTabRouter.self) private var tabRouter
     @Environment(FocusSessionStore.self) private var focusSessionStore
     @Query(sort: \VoiceNote.createdAt, order: .reverse) private var voiceNotes: [VoiceNote]
+    @Query(sort: \VoiceNoteReminder.createdAt, order: .reverse) private var voiceNoteReminders: [VoiceNoteReminder]
 
     @State private var showWidgetSheet = false
     @State private var aiScansToday = 0
 
     var body: some View {
+        let recentActivityItems = RecentActivityService().makeItems(
+            voiceNotes: voiceNotes,
+            reminders: voiceNoteReminders,
+            activeFocusSession: focusSessionStore.activeSession
+        )
+
         ZStack {
             Color("BackgroundDark").ignoresSafeArea()
 
@@ -55,8 +62,10 @@ struct HomeView: View {
                         onVoiceNote: { tabRouter.openProfile(.voiceNotes) }
                     )
 
-                    SectionTitleView(title: "Recent Activity")
-                    RecentActivityView()
+                    if recentActivityItems.isEmpty == false {
+                        SectionTitleView(title: "Recent Activity")
+                        RecentActivityView(items: recentActivityItems)
+                    }
 
                     SectionTitleView(title: "AI Tip of the Day")
                     AITipCardView()

@@ -9,6 +9,8 @@ struct FocusSession: Codable, Hashable, Sendable, Identifiable {
     var preset: FocusPreset
     var blockedItemsCount: Int
     var shouldNotifyAtEnd: Bool
+    var showsLiveActivity: Bool
+    var liveActivityID: String?
 
     init(
         id: UUID = UUID(),
@@ -18,7 +20,9 @@ struct FocusSession: Codable, Hashable, Sendable, Identifiable {
         durationMinutes: Int,
         preset: FocusPreset,
         blockedItemsCount: Int,
-        shouldNotifyAtEnd: Bool
+        shouldNotifyAtEnd: Bool,
+        showsLiveActivity: Bool = false,
+        liveActivityID: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -28,5 +32,7 @@ struct FocusSession: Codable, Hashable, Sendable, Identifiable {
         self.preset = preset
         self.blockedItemsCount = blockedItemsCount
         self.shouldNotifyAtEnd = shouldNotifyAtEnd
+        self.showsLiveActivity = showsLiveActivity
+        self.liveActivityID = liveActivityID
     }
 }

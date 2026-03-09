@@ -39,6 +39,7 @@ struct RootView: View {
         }
         .task {
             await AlarmLiveActivityService.shared.endExpiredActivities()
+            await FocusSessionLiveActivityService.shared.endExpiredActivities()
             await focusSessionStore.reconcileSessionState()
             if alarmLaunchRouter.consumePendingLaunch(tabRouter: tabRouter) {
                 await AlarmLiveActivityService.shared.endAllActivities()
@@ -48,6 +49,7 @@ struct RootView: View {
             guard newPhase == .active else { return }
             Task {
                 await AlarmLiveActivityService.shared.endExpiredActivities()
+                await FocusSessionLiveActivityService.shared.endExpiredActivities()
                 await focusSessionStore.reconcileSessionState()
             }
             if alarmLaunchRouter.consumePendingLaunch(tabRouter: tabRouter) {

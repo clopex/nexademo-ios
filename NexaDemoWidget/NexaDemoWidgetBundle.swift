@@ -14,5 +14,6 @@ struct NexaDemoWidgetBundle: WidgetBundle {
         NexaDemoWidget()
         NexaDemoWidgetControl()
         NexaDemoWidgetLiveActivity()
+        NexaDemoFocusSessionLiveActivity()
     }
 }
