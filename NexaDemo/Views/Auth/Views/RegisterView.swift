@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct RegisterView: View {
     @Environment(AuthViewModel.self) private var authVM
@@ -55,6 +56,7 @@ struct RegisterView: View {
                 }
 
                 Button {
+                    dismissKeyboard()
                     Task { await authVM.register(fullName: fullName, email: email, password: password) }
                 } label: {
                     if authVM.isLoading {
@@ -97,6 +99,10 @@ struct RegisterView: View {
             showToast = false
         }
         authVM.errorMessage = nil
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 

@@ -5,6 +5,9 @@ import LocalAuthentication
 @MainActor
 @Observable
 final class AuthViewModel {
+    private static let pendingProfileSetupUserIDsKey = "pendingProfileSetupUserIDs"
+    private static let completedProfileSetupUserIDsKey = "completedProfileSetupUserIDs"
+
     var currentUser: User?
     var isLoggedIn = false
     var needsProfileSetup = false
@@ -29,12 +32,7 @@ final class AuthViewModel {
 
         do {
             let response = try await AuthService.shared.register(fullName: fullName, email: email, password: password)
-            await KeychainService.shared.saveToken(response.token)
-            BiometricAuthService.setLoginPending(false)
-            currentUser = response.user
-            isLoggedIn = true
-            needsProfileSetup = true
-            await refreshBiometricLoginAvailability()
+            await beginAuthenticatedSession(with: response, requiresProfileSetup: true)
         } catch {
             setError(error)
         }
@@ -48,12 +46,7 @@ final class AuthViewModel {
 
         do {
             let response = try await AuthService.shared.login(email: email, password: password)
-            await KeychainService.shared.saveToken(response.token)
-            BiometricAuthService.setLoginPending(false)
-            currentUser = response.user
-            isLoggedIn = true
-            needsProfileSetup = false
-            await refreshBiometricLoginAvailability()
+            await beginAuthenticatedSession(with: response, requiresProfileSetup: false)
         } catch {
             setError(error)
         }
@@ -67,12 +60,7 @@ final class AuthViewModel {
 
         do {
             let response = try await AuthService.shared.googleLogin(googleId: googleId, email: email, fullName: fullName, profilePicture: profilePicture)
-            await KeychainService.shared.saveToken(response.token)
-            BiometricAuthService.setLoginPending(false)
-            currentUser = response.user
-            isLoggedIn = true
-            needsProfileSetup = false
-            await refreshBiometricLoginAvailability()
+            await beginAuthenticatedSession(with: response, requiresProfileSetup: false)
         } catch {
             setError(error)
         }
@@ -86,12 +74,7 @@ final class AuthViewModel {
 
         do {
             let response = try await AuthService.shared.appleLogin(appleId: appleId, email: email, fullName: fullName)
-            await KeychainService.shared.saveToken(response.token)
-            BiometricAuthService.setLoginPending(false)
-            currentUser = response.user
-            isLoggedIn = true
-            needsProfileSetup = false
-            await refreshBiometricLoginAvailability()
+            await beginAuthenticatedSession(with: response, requiresProfileSetup: true)
         } catch {
             setError(error)
         }
@@ -101,9 +84,10 @@ final class AuthViewModel {
 
     func loadCurrentUser() async {
         do {
-            currentUser = try await AuthService.shared.getMe()
+            let user = try await AuthService.shared.getMe()
+            currentUser = user
             isLoggedIn = true
-            needsProfileSetup = false
+            needsProfileSetup = isProfileSetupPending(for: user.id)
         } catch {
             await KeychainService.shared.deleteToken()
             BiometricAuthService.setLoginPending(false)
@@ -157,7 +141,7 @@ final class AuthViewModel {
         isBiometricLoginAvailable = BiometricAuthService.isEnabled() && hasToken
     }
 
-    func logout() {
+    func logout() async {
         let shouldKeepToken = BiometricAuthService.isEnabled()
 
         if shouldKeepToken {
@@ -165,7 +149,7 @@ final class AuthViewModel {
             isBiometricLoginAvailable = true
         } else {
             isBiometricLoginAvailable = false
-            Task { await KeychainService.shared.deleteToken() }
+            await KeychainService.shared.deleteToken()
         }
 
         currentUser = nil
@@ -201,6 +185,77 @@ final class AuthViewModel {
 
         await loadCurrentUser()
         isBootstrapping = false
+    }
+    
+    func completeProfileSetup(with user: User) {
+        currentUser = user
+        markProfileSetupCompleted(for: user.id)
+        clearProfileSetupPending(for: user.id)
+        needsProfileSetup = false
+    }
+    
+    private func beginAuthenticatedSession(with response: AuthResponse, requiresProfileSetup: Bool) async {
+        await KeychainService.shared.saveToken(response.token)
+        BiometricAuthService.setLoginPending(false)
+
+        let user = await loadCanonicalUser(fallback: response.user)
+        currentUser = user
+        isLoggedIn = true
+        if requiresProfileSetup && hasCompletedProfileSetup(for: user.id) == false {
+            markProfileSetupPending(for: user.id)
+        }
+        needsProfileSetup = isProfileSetupPending(for: user.id)
+
+        await refreshBiometricLoginAvailability()
+    }
+    
+    private func loadCanonicalUser(fallback fallbackUser: User) async -> User {
+        do {
+            return try await AuthService.shared.getMe()
+        } catch {
+            return fallbackUser
+        }
+    }
+    
+    private func isProfileSetupPending(for userID: String) -> Bool {
+        pendingProfileSetupUserIDs().contains(userID)
+    }
+    
+    private func normalized(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines), trimmed.isEmpty == false else {
+            return nil
+        }
+        return trimmed
+    }
+    
+    private func pendingProfileSetupUserIDs() -> Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: Self.pendingProfileSetupUserIDsKey) ?? [])
+    }
+    
+    private func completedProfileSetupUserIDs() -> Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: Self.completedProfileSetupUserIDsKey) ?? [])
+    }
+    
+    private func hasCompletedProfileSetup(for userID: String) -> Bool {
+        completedProfileSetupUserIDs().contains(userID)
+    }
+    
+    private func markProfileSetupPending(for userID: String) {
+        var userIDs = pendingProfileSetupUserIDs()
+        userIDs.insert(userID)
+        UserDefaults.standard.set(Array(userIDs), forKey: Self.pendingProfileSetupUserIDsKey)
+    }
+    
+    private func markProfileSetupCompleted(for userID: String) {
+        var userIDs = completedProfileSetupUserIDs()
+        userIDs.insert(userID)
+        UserDefaults.standard.set(Array(userIDs), forKey: Self.completedProfileSetupUserIDsKey)
+    }
+    
+    private func clearProfileSetupPending(for userID: String) {
+        var userIDs = pendingProfileSetupUserIDs()
+        userIDs.remove(userID)
+        UserDefaults.standard.set(Array(userIDs), forKey: Self.pendingProfileSetupUserIDsKey)
     }
 
     private func setError(_ error: Error) {

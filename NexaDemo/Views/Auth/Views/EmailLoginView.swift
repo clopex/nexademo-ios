@@ -252,6 +252,7 @@ struct EmailLoginView: View {
         case .password:
             withAnimation(.easeInOut(duration: 0.25)) { stage = .confirm }
         case .confirm:
+            focusField = nil
             let fallbackName = email.split(separator: "@").first.map(String.init) ?? "User"
             Task { await authVM.register(fullName: fallbackName, email: email, password: password) }
         }

@@ -29,6 +29,10 @@ final class UserUpdateViewModel {
     var isUpdatingProfile = false
     var imageStatusMessage: String?
     var updateStatusMessage: String?
+    
+    var hasPendingImageUpload: Bool {
+        selectedImageData != nil
+    }
 
     var hasChanges: Bool {
         if selectedImageData != nil || profileImage != nil {
@@ -99,6 +103,7 @@ final class UserUpdateViewModel {
             } else {
                 print("ImageKit upload returned no URL.")
             }
+            selectedImageData = nil
             imageStatusMessage = "Upload complete."
         } catch {
             imageStatusMessage = error.localizedDescription
@@ -170,6 +175,10 @@ final class UserUpdateViewModel {
 
     func prefill(from user: User?, force: Bool = false) {
         guard let user, !didPrefill || force else { return }
+        profileImage = nil
+        selectedImageData = nil
+        updateStatusMessage = nil
+        imageStatusMessage = nil
         fullName = user.fullName
         gender = user.gender ?? "Select"
         country = user.country ?? ""

@@ -7,6 +7,8 @@ struct UserUpdateView: View {
     @State private var viewModel = UserUpdateViewModel()
     @State private var countryStore = CountryLookupStore()
     @State private var selectedItem: PhotosPickerItem?
+    @State private var showToast = false
+    @State private var toast = Toast.example
     @State private var showCamera = false
     @State private var showImageSourceDialog = false
     @State private var showPhotoPicker = false
@@ -34,6 +36,7 @@ struct UserUpdateView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         HStack(alignment: .center, spacing: 16) {
                             Button {
+                                focusField = nil
                                 showImageSourceDialog = true
                             } label: {
                                 ZStack {
@@ -247,6 +250,7 @@ struct UserUpdateView: View {
             }
         }
         .navigationTitle("Update Profile")
+        .dynamicIslandToasts(isPresented: $showToast, value: toast)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if !isInitialSetup {
@@ -304,9 +308,13 @@ struct UserUpdateView: View {
             await countryStore.loadIfNeeded()
             viewModel.prefill(from: authVM.currentUser)
         }
+        .onChange(of: authVM.currentUser?.id) { _, _ in
+            viewModel.prefill(from: authVM.currentUser, force: true)
+        }
     }
 
     private func openCamera() {
+        focusField = nil
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
             showCamera = true
         } else {
@@ -315,10 +323,22 @@ struct UserUpdateView: View {
     }
 
     private func handleUpdate() {
+        focusField = nil
+        guard viewModel.hasPendingImageUpload == false else {
+            toast = Toast(
+                symbol: "exclamationmark.triangle.fill",
+                symbolFont: .system(size: 28),
+                symbolForegrgoundStyle: (.white, .orange),
+                title: "Save image first",
+                message: "Upload and save the selected profile image before updating."
+            )
+            showToast = true
+            return
+        }
+
         Task {
             if let user = await viewModel.updateProfile() {
-                authVM.currentUser = user
-                authVM.needsProfileSetup = false
+                authVM.completeProfileSetup(with: user)
                 viewModel.prefill(from: user, force: true)
             }
         }
