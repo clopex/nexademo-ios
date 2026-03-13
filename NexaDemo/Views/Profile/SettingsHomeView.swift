@@ -52,7 +52,9 @@ struct SettingsHomeView: View {
                     // Danger zone
                     SettingsSection(title: "Account Actions") {
                         Button {
-                            authVM.logout()
+                            Task {
+                                await authVM.logout()
+                            }
                         } label: {
                             HStack(spacing: 14) {
                                 ZStack {

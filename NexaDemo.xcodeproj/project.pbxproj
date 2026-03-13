@@ -75,17 +75,17 @@
 			);
 			target = E9915A0B2F578E3300C20518 /* NexaDemoWidgetExtension */;
 		};
-		EAF1001B2F70000100A1B2C3 /* Exceptions for "NexaDemo" folder in "NexaDemoFocusMonitor" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Features/FocusSession/FocusSessionActivityAttributes.swift,
-			);
-			target = EAF1000F2F70000100A1B2C3 /* NexaDemoFocusMonitor */;
-		};
 		EAF100132F70000100A1B2C3 /* Exceptions for "NexaDemoFocusMonitor" folder in "NexaDemoFocusMonitor" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+			);
+			target = EAF1000F2F70000100A1B2C3 /* NexaDemoFocusMonitor */;
+		};
+		EAF1001B2F70000100A1B2C3 /* Exceptions for "NexaDemo" folder in "NexaDemoFocusMonitor" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Features/FocusSession/FocusSessionActivityAttributes.swift,
 			);
 			target = EAF1000F2F70000100A1B2C3 /* NexaDemoFocusMonitor */;
 		};

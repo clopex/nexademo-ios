@@ -10,8 +10,11 @@ import SwiftUI
 struct CameraStudioView: View {
     @Environment(AuthViewModel.self) private var authVM
     @Environment(AppSheetManager.self) private var sheetManager
+    @Environment(AppTabRouter.self) private var tabRouter
     @Environment(AIRouter.self) private var router
     @State private var viewModel = AIStudioViewModel()
+    @State private var showToast = false
+    @State private var toast = Toast.example
 
     var body: some View {
         ZStack {
@@ -37,7 +40,10 @@ struct CameraStudioView: View {
 
                     // Scan button
                     Button {
-                        guard canStartScan else { return }
+                        guard canStartScan else {
+                            presentScanLimitToast()
+                            return
+                        }
                         sheetManager.presentFullScreen(.camera(viewModel))
                     } label: {
                         HStack(spacing: 12) {
@@ -52,7 +58,6 @@ struct CameraStudioView: View {
                         .background(canStartScan ? Color("BrandAccent") : Color.gray.opacity(0.45))
                         .clipShape(RoundedRectangle(cornerRadius: 28))
                     }
-                    .disabled(!canStartScan)
                     .padding(.horizontal, 20)
 
                     Text(scanUsageLabel)
@@ -152,6 +157,7 @@ struct CameraStudioView: View {
         }
         .navigationTitle("AI Studio")
         .navigationBarTitleDisplayMode(.inline)
+        .dynamicIslandToasts(isPresented: $showToast, value: toast)
         .onAppear {
             viewModel.refreshDailyUsage()
         }
@@ -169,5 +175,23 @@ struct CameraStudioView: View {
         isPremium
         ? "Today's scans: \(viewModel.aiScansToday)/∞"
         : "Today's scans: \(viewModel.aiScansToday)/\(viewModel.freeScanLimit)"
+    }
+
+    @MainActor
+    private func presentScanLimitToast() {
+        toast = Toast(
+            symbol: "crown.fill",
+            symbolFont: .system(size: 28),
+            symbolForegrgoundStyle: (.white, Color("SuccessAccent")),
+            title: "Upgrade required",
+            message: "Free plan supports up to 5 AI scans per day."
+        )
+        showToast = true
+
+        Task {
+            try? await Task.sleep(for: .seconds(1.4))
+            showToast = false
+            tabRouter.selectedTab = .premium
+        }
     }
 }

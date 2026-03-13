@@ -24,7 +24,7 @@ final class AIChatViewModel {
         }
     }
     
-    func sendMessage(_ text: String) async {
+    func sendMessage(_ text: String) async -> Bool {
         let userMessage = ChatMessageModel(
             id: UUID().uuidString,
             role: "user",
@@ -44,14 +44,17 @@ final class AIChatViewModel {
                 createdAt: Date()
             )
             messages.append(assistantMessage)
+            isLoading = false
+            return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = message(for: error)
             if messages.last?.role == "user" {
                 messages.removeLast()
             }
         }
         
         isLoading = false
+        return false
     }
     
     func clearHistory() async {
@@ -61,5 +64,16 @@ final class AIChatViewModel {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func message(for error: Error) -> String {
+        if case let NetworkClientError.serverError(statusCode, message) = error {
+            if statusCode == 503 {
+                return "\(message) If this keeps happening, clear chat history and try again."
+            }
+            return message
+        }
+
+        return error.localizedDescription
     }
 }

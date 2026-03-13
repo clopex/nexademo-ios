@@ -4,6 +4,8 @@ import Foundation
 @MainActor
 final class FocusSessionLiveActivityService {
     static let shared = FocusSessionLiveActivityService()
+    private let defaults = UserDefaults(suiteName: "group.com.codify.nexademo") ?? .standard
+    private let cleanupKey = "focus_session_live_activity_cleanup"
 
     private init() {}
 
@@ -60,6 +62,16 @@ final class FocusSessionLiveActivityService {
         for activity in Activity<FocusSessionActivityAttributes>.activities {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
+    }
+
+    func markCleanupNeeded() {
+        defaults.set(true, forKey: cleanupKey)
+    }
+
+    func consumePendingCleanup() async {
+        guard defaults.bool(forKey: cleanupKey) else { return }
+        await endAllActivities()
+        defaults.set(false, forKey: cleanupKey)
     }
 
     private func activity(for session: FocusSession) -> Activity<FocusSessionActivityAttributes>? {

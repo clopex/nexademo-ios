@@ -11,7 +11,7 @@ struct VoiceNotesEmptyStateView: View {
             Text("No Voice Notes")
                 .font(.title3)
                 .bold()
-                .foregroundStyle(.black)
+                .foregroundStyle(.white)
 
             Text("Tap the mic button to record your first voice note")
                 .font(.subheadline)

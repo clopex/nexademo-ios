@@ -8,12 +8,14 @@
 import SwiftUI
 
 struct VoiceCallView: View {
+    @Environment(AuthViewModel.self) private var authVM
     @Environment(\.dismiss) private var dismiss
     let channel: String
     let contactName: String
     let contactInitials: String
 
     @State private var agoraService = AgoraService()
+    @State private var didRecordActivity = false
 
     var body: some View {
         ZStack {
@@ -120,6 +122,13 @@ struct VoiceCallView: View {
             }
         }
         .task {
+            if didRecordActivity == false, let userID = authVM.currentUser?.id {
+                didRecordActivity = true
+                RecentActivityStore.shared.recordCallStarted(
+                    userID: userID,
+                    contactName: contactName
+                )
+            }
             await agoraService.joinChannel(channel)
         }
         .onDisappear {

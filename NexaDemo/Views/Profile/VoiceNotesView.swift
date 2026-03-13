@@ -3,15 +3,19 @@ import SwiftData
 
 struct VoiceNotesView: View {
     @Environment(AuthViewModel.self) private var authVM
+    @Environment(AppTabRouter.self) private var tabRouter
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \VoiceNote.createdAt, order: .reverse) private var notes: [VoiceNote]
     @Query(sort: \VoiceNoteReminder.createdAt, order: .reverse) private var reminders: [VoiceNoteReminder]
     @State private var speechService: SpeechService
     @State private var showingRecorder = false
     @State private var editingNote: VoiceNote?
+    @State private var notePendingDeletion: VoiceNote?
     @State private var reminderDraft: VoiceNoteReminderDraft?
     @State private var reminderErrorMessage: String?
     @State private var isRecorderPrewarmed = false
+    @State private var showToast = false
+    @State private var toast = Toast.example
     private let reminderParser = VoiceNoteReminderParser()
 
     @MainActor
@@ -21,7 +25,7 @@ struct VoiceNotesView: View {
 
     var body: some View {
         ZStack {
-            Color("Background").ignoresSafeArea()
+            Color("BackgroundDark").ignoresSafeArea()
 
             VStack(spacing: 0) {
                 if notes.isEmpty {
@@ -31,13 +35,17 @@ struct VoiceNotesView: View {
                         notes: notes,
                         remindersByNoteID: remindersByNoteID,
                         onEdit: { editingNote = $0 },
-                        onDelete: deleteNote,
+                        onDelete: requestDeleteConfirmation,
+                        onDeleteOffsets: requestDeleteConfirmation,
                         onAddReminder: openReminderComposer(for:),
                         onEditReminder: openReminderComposer(for:),
                         onRemoveReminder: removeReminder
                     )
                 }
             }
+            .blur(radius: notePendingDeletion == nil ? 0 : 2)
+            .scaleEffect(notePendingDeletion == nil ? 1 : 0.985)
+            .animation(.spring(response: 0.32, dampingFraction: 0.86), value: notePendingDeletion != nil)
 
             VStack {
                 Spacer()
@@ -46,9 +54,24 @@ struct VoiceNotesView: View {
                 }
                 .padding(.bottom, 24)
             }
+
+            if let notePendingDeletion {
+                VoiceNoteDeleteConfirmationView(
+                    note: notePendingDeletion,
+                    onCancel: dismissDeleteConfirmation,
+                    onConfirm: confirmPendingDeletion
+                )
+                .transition(
+                    .asymmetric(
+                        insertion: .scale(scale: 0.94).combined(with: .opacity),
+                        removal: .scale(scale: 0.98).combined(with: .opacity)
+                    )
+                )
+            }
         }
         .navigationTitle("Voice Notes")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .dynamicIslandToasts(isPresented: $showToast, value: toast)
         .sheet(isPresented: $showingRecorder) {
             VoiceRecorderSheet(
                 speechService: speechService,
@@ -77,6 +100,15 @@ struct VoiceNotesView: View {
         } message: {
             Text(reminderErrorMessage ?? "Something went wrong while scheduling your alarm.")
         }
+        .onAppear {
+            syncFreePlanUsage()
+        }
+        .onChange(of: notes.count) { _, _ in
+            syncFreePlanUsage()
+        }
+        .onChange(of: authVM.currentUser?.id) { _, _ in
+            syncFreePlanUsage()
+        }
     }
 
     private func saveNote(text: String, duration: TimeInterval) {
@@ -85,11 +117,18 @@ struct VoiceNotesView: View {
 
         let note = VoiceNote(text: trimmed)
         modelContext.insert(note)
+        if let userID = authVM.currentUser?.id {
+            FreePlanUsageStore.registerVoiceNoteCreated(for: userID)
+        }
         VoiceNoteDurationStore.setDuration(duration, for: note.id)
         let allNotes = [note] + notes
         syncWidgetUsage(with: allNotes)
 
         if let candidate = reminderParser.parseCandidate(from: trimmed) {
+            guard isPremium else {
+                presentUpgradePaywall()
+                return
+            }
             reminderDraft = makeDraft(for: note, existingReminder: nil, candidate: candidate, opensAutomatically: true)
         }
     }
@@ -107,8 +146,36 @@ struct VoiceNotesView: View {
         }
     }
 
+    private func requestDeleteConfirmation(for note: VoiceNote) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
+            notePendingDeletion = note
+        }
+    }
+
+    private func requestDeleteConfirmation(at offsets: IndexSet) {
+        guard let index = offsets.first, notes.indices.contains(index) else { return }
+        requestDeleteConfirmation(for: notes[index])
+    }
+
+    private func dismissDeleteConfirmation() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.88)) {
+            notePendingDeletion = nil
+        }
+    }
+
+    private func confirmPendingDeletion() {
+        guard let notePendingDeletion else { return }
+        dismissDeleteConfirmation()
+        deleteNote(notePendingDeletion)
+    }
+
     @MainActor
     private func presentRecorder() async {
+        guard canCreateVoiceNote else {
+            presentVoiceNoteUpgradeToast()
+            return
+        }
+
         let granted = await speechService.requestPermissions()
         if granted {
             await speechService.prepareForRecording()
@@ -145,6 +212,11 @@ struct VoiceNotesView: View {
     }
 
     private func openReminderComposer(for note: VoiceNote) {
+        guard isPremium else {
+            presentUpgradePaywall()
+            return
+        }
+
         let candidate = reminderParser.parseCandidate(from: note.text)
         reminderDraft = makeDraft(
             for: note,
@@ -155,6 +227,11 @@ struct VoiceNotesView: View {
     }
 
     private func openReminderComposer(for reminder: VoiceNoteReminder) {
+        guard isPremium else {
+            presentUpgradePaywall()
+            return
+        }
+
         guard let note = notes.first(where: { $0.id == reminder.voiceNoteID }) else { return }
         reminderDraft = VoiceNoteReminderDraft(
             noteID: note.id,
@@ -241,6 +318,42 @@ struct VoiceNotesView: View {
     private func clearOtherLiveActivityIDs(except reminderID: UUID) {
         for reminder in reminders where reminder.id != reminderID {
             reminder.liveActivityID = nil
+        }
+    }
+
+    private var isPremium: Bool {
+        authVM.currentUser?.isPremium ?? false
+    }
+
+    private var canCreateVoiceNote: Bool {
+        guard let userID = authVM.currentUser?.id else { return true }
+        return FreePlanUsageStore.canCreateVoiceNote(for: userID, isPremium: isPremium)
+    }
+
+    private func syncFreePlanUsage() {
+        guard let userID = authVM.currentUser?.id else { return }
+        FreePlanUsageStore.syncVoiceNotesCreated(to: notes.count, for: userID)
+    }
+
+    private func presentUpgradePaywall() {
+        tabRouter.selectedTab = .premium
+    }
+
+    @MainActor
+    private func presentVoiceNoteUpgradeToast() {
+        toast = Toast(
+            symbol: "crown.fill",
+            symbolFont: .system(size: 28),
+            symbolForegrgoundStyle: (.white, Color("SuccessAccent")),
+            title: "Upgrade required",
+            message: "Free plan supports up to 3 voice notes."
+        )
+        showToast = true
+
+        Task {
+            try? await Task.sleep(for: .seconds(1.4))
+            showToast = false
+            tabRouter.selectedTab = .premium
         }
     }
 }

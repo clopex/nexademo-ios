@@ -8,10 +8,15 @@
 import SwiftUI
 
 struct AIChatView: View {
+    @Environment(AuthViewModel.self) private var authVM
+    @Environment(AppTabRouter.self) private var tabRouter
     @State private var viewModel = AIChatViewModel()
     @State private var speechService = SpeechService()
     @State private var messageText = ""
     @State private var didSendInitialMessage = false
+    @State private var ignoresSpeechUpdates = false
+    @State private var showToast = false
+    @State private var toast = Toast.example
     @FocusState private var isInputFocused: Bool
     let initialMessage: String?
     
@@ -63,6 +68,7 @@ struct AIChatView: View {
         .navigationTitle("AI Chat")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .dynamicIslandToasts(isPresented: $showToast, value: toast)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
@@ -75,6 +81,7 @@ struct AIChatView: View {
         }
         .task {
             await viewModel.loadHistory()
+            syncFreePlanUsage()
             guard didSendInitialMessage == false,
                   let message = initialMessage?.trimmingCharacters(in: .whitespacesAndNewlines),
                   message.isEmpty == false else {
@@ -82,17 +89,52 @@ struct AIChatView: View {
             }
 
             didSendInitialMessage = true
-            await viewModel.sendMessage(message)
+            guard canSendAIMessage else {
+                presentUpgradePaywall()
+                return
+            }
+
+            let didSend = await viewModel.sendMessage(message)
+            if didSend, let userID = authVM.currentUser?.id {
+                FreePlanUsageStore.registerAIChatMessageSent(for: userID)
+                RecentActivityStore.shared.recordAIChatMessage(userID: userID, message: message)
+            }
+        }
+        .onChange(of: authVM.currentUser?.id) { _, _ in
+            syncFreePlanUsage()
         }
         .onChange(of: speechService.transcript) { _, newValue in
+            if ignoresSpeechUpdates {
+                return
+            }
+
             if !newValue.isEmpty {
                 messageText = newValue
             }
         }
         .onChange(of: speechService.isRecording) { _, isRecording in
+            if isRecording {
+                ignoresSpeechUpdates = false
+            }
+
+            if ignoresSpeechUpdates {
+                return
+            }
+
             if !isRecording && !speechService.transcript.isEmpty {
                 messageText = speechService.transcript
             }
+        }
+        .onChange(of: viewModel.errorMessage) { _, newValue in
+            guard let message = newValue, message.isEmpty == false else { return }
+            toast = Toast(
+                symbol: "xmark.seal.fill",
+                symbolFont: .system(size: 28),
+                symbolForegrgoundStyle: (.white, .red),
+                title: "AI Chat error",
+                message: message
+            )
+            showToast = true
         }
     }
 
@@ -151,11 +193,25 @@ struct AIChatView: View {
     private func sendMessage() {
         let text = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
+        guard canSendAIMessage else {
+            presentUpgradePaywall()
+            return
+        }
+        let shouldSuppressSpeechUpdates = speechService.isRecording || !speechService.transcript.isEmpty
+        if shouldSuppressSpeechUpdates {
+            ignoresSpeechUpdates = true
+        }
         speechService.stopRecording()
         speechService.transcript = ""
         messageText = ""
         isInputFocused = false
-        Task { await viewModel.sendMessage(text) }
+        Task {
+            let didSend = await viewModel.sendMessage(text)
+            if didSend, let userID = authVM.currentUser?.id {
+                FreePlanUsageStore.registerAIChatMessageSent(for: userID)
+                RecentActivityStore.shared.recordAIChatMessage(userID: userID, message: text)
+            }
+        }
     }
 
     private func scrollToBottom(proxy: ScrollViewProxy) {
@@ -164,6 +220,28 @@ struct AIChatView: View {
                 proxy.scrollTo(lastId, anchor: .bottom)
             }
         }
+    }
+
+    private var isPremium: Bool {
+        authVM.currentUser?.isPremium ?? false
+    }
+
+    private var canSendAIMessage: Bool {
+        guard let userID = authVM.currentUser?.id else { return true }
+        return FreePlanUsageStore.canSendAIChatMessage(for: userID, isPremium: isPremium)
+    }
+
+    private func syncFreePlanUsage() {
+        guard let userID = authVM.currentUser?.id else { return }
+        let sentMessagesCount = viewModel.messages.filter { $0.role == "user" }.count
+        FreePlanUsageStore.syncAIChatMessagesSent(atLeast: sentMessagesCount, for: userID)
+    }
+
+    private func presentUpgradePaywall() {
+        speechService.stopRecording()
+        speechService.transcript = ""
+        isInputFocused = false
+        tabRouter.selectedTab = .premium
     }
 }
 

@@ -17,12 +17,15 @@ final class AIStudioViewModel {
     let freeScanLimit = 5
     var hasResults: Bool { !detectedObjects.isEmpty }
 
-    func updateResults(objects: [DetectedObject], image: UIImage?) {
+    func updateResults(objects: [DetectedObject], image: UIImage?, userID: String?) {
         let newCount = AIScanAttemptStore.shared.registerScanAttempt()
         detectedObjects = objects
         capturedImage = image
         aiScansToday = newCount
         WidgetDataService.shared.updateAIScanUsage(todayCount: newCount, freeLimit: freeScanLimit)
+        if let userID {
+            RecentActivityStore.shared.recordAIScan(userID: userID, objects: objects)
+        }
     }
 
     func clearResults() {

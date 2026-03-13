@@ -85,7 +85,7 @@ struct NexaFloatingButton: View {
 // MARK: - Nexa Overlay
 struct NexaAssistantView: View {
     @Binding var isPresented: Bool
-    @Environment(AppSheetManager.self) private var sheetManager
+    @Environment(AuthViewModel.self) private var authVM
     @Environment(AppTabRouter.self) private var tabRouter
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = NexaAssistantViewModel()
@@ -341,30 +341,61 @@ struct NexaAssistantView: View {
 
     // MARK: - Execute Command
     private func executeCommand(_ command: NexaCommand) {
+        let matchedCallContact: DemoContact?
+        if command.action == .makeCall,
+           let contactName = command.parameters.contact {
+            matchedCallContact = matchedContact(named: contactName)
+        } else {
+            matchedCallContact = nil
+        }
+
+        if let userID = authVM.currentUser?.id {
+            RecentActivityStore.shared.recordNexaCommand(
+                userID: userID,
+                title: command.action.displayName,
+                subtitle: command.action.description(for: command.parameters)
+            )
+        }
+
         dismiss()
 
         Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(300))
+            if let matchedCallContact {
+                try? await Task.sleep(for: .milliseconds(220))
+                tabRouter.openConnect()
+                try? await Task.sleep(for: .milliseconds(80))
+                tabRouter.openConnect(.activeCall(matchedCallContact.channelName))
+                return
+            }
+
+            try? await Task.sleep(for: .milliseconds(180))
 
             switch command.action {
             case .createVoiceNote:
+                guard canCreateVoiceNote else {
+                    tabRouter.selectedTab = .premium
+                    return
+                }
+
                 if let content = command.parameters.content {
                     let note = VoiceNote(text: content)
                     modelContext.insert(note)
                     try? modelContext.save()
-                    tabRouter.selectedTab = .profile
+                    if let userID = authVM.currentUser?.id {
+                        FreePlanUsageStore.registerVoiceNoteCreated(for: userID)
+                    }
+                    tabRouter.openProfile(.voiceNotes)
                 }
 
             case .openAIChat:
-                tabRouter.selectedTab = .ai
-                if let message = command.parameters.message {
-                    NotificationCenter.default.post(
-                        name: .nexaOpenAIChat,
-                        object: message
-                    )
-                }
+                tabRouter.openAI(.chat(command.parameters.message))
 
             case .startFocusSession:
+                guard authVM.currentUser?.isPremium ?? false else {
+                    tabRouter.selectedTab = .premium
+                    return
+                }
+
                 let preset = FocusPreset(rawValue: command.parameters.preset ?? "") ?? .deepWork
                 let proposal = FocusSessionProposal(
                     title: command.parameters.title ?? preset.title,
@@ -376,27 +407,19 @@ struct NexaAssistantView: View {
                 tabRouter.openHome(.focusSession(proposal))
 
             case .startScan:
-                tabRouter.selectedTab = .ai
+                tabRouter.openAI()
 
             case .makeCall:
-                if let contactName = command.parameters.contact {
-                    let contact = DemoContact.samples.first {
-                        $0.name.lowercased().contains(contactName.lowercased())
-                    }
-                    if let contact {
-                        tabRouter.selectedTab = .connect
-                        sheetManager.presentFullScreen(.videoCall(contact.channelName))
-                    }
-                }
+                tabRouter.openConnect()
 
             case .navigate:
                 if let tab = command.parameters.tab {
                     switch tab {
-                    case "home": tabRouter.selectedTab = .home
-                    case "ai": tabRouter.selectedTab = .ai
+                    case "home": tabRouter.openHome()
+                    case "ai": tabRouter.openAI()
                     case "premium": tabRouter.selectedTab = .premium
-                    case "connect": tabRouter.selectedTab = .connect
-                    case "profile": tabRouter.selectedTab = .profile
+                    case "connect": tabRouter.openConnect()
+                    case "profile": tabRouter.openProfile()
                     default: break
                     }
                 }
@@ -463,6 +486,26 @@ struct NexaAssistantView: View {
             .background(Color("CardBackground"))
             .clipShape(Capsule())
     }
+
+    private func matchedContact(named name: String) -> DemoContact? {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedName.isEmpty == false else { return nil }
+
+        return DemoContact.samples.first { contact in
+            if contact.name.localizedStandardContains(trimmedName) {
+                return true
+            }
+
+            let firstName = contact.name.split(separator: " ").first.map(String.init) ?? contact.name
+            return firstName.localizedStandardContains(trimmedName)
+        }
+    }
+
+    private var canCreateVoiceNote: Bool {
+        guard let userID = authVM.currentUser?.id else { return true }
+        let isPremium = authVM.currentUser?.isPremium ?? false
+        return FreePlanUsageStore.canCreateVoiceNote(for: userID, isPremium: isPremium)
+    }
 }
 
 // MARK: - Wave Bar
@@ -526,8 +569,4 @@ extension NexaAction {
         case .unknown: return "Couldn't parse command"
         }
     }
-}
-
-extension Notification.Name {
-    static let nexaOpenAIChat = Notification.Name("nexaOpenAIChat")
 }

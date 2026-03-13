@@ -12,12 +12,15 @@ struct HomeView: View {
 
     @State private var showWidgetSheet = false
     @State private var aiScansToday = 0
+    @State private var recentActivityVersion = 0
 
     var body: some View {
+        let _ = recentActivityVersion
         let recentActivityItems = RecentActivityService().makeItems(
             voiceNotes: voiceNotes,
             reminders: voiceNoteReminders,
-            activeFocusSession: focusSessionStore.activeSession
+            activeFocusSession: focusSessionStore.activeSession,
+            userID: authVM.currentUser?.id
         )
 
         ZStack {
@@ -34,7 +37,7 @@ struct HomeView: View {
 
                     PremiumStatusCardView(
                         isPremium: authVM.currentUser?.isPremium ?? false,
-                        onUpgrade: { sheetManager.present(.paywall) }
+                        onUpgrade: { tabRouter.selectedTab = .premium }
                     )
 
                     if let session = focusSessionStore.activeSession {
@@ -53,6 +56,10 @@ struct HomeView: View {
                     SectionTitleView(title: "Quick Actions")
                     QuickActionsView(
                         onAIFocus: {
+                            guard authVM.currentUser?.isPremium ?? false else {
+                                tabRouter.selectedTab = .premium
+                                return
+                            }
                             homeRouter.push(
                                 .focusSession(FocusAIParserService().defaultProposal())
                             )
@@ -92,6 +99,9 @@ struct HomeView: View {
         }
         .onChange(of: authVM.currentUser?.fullName) { _, _ in
             syncWidgetUsage()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .recentActivityDidChange)) { _ in
+            recentActivityVersion += 1
         }
     }
 

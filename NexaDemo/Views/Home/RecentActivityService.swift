@@ -4,12 +4,14 @@ struct RecentActivityService: Sendable {
     func makeItems(
         voiceNotes: [VoiceNote],
         reminders: [VoiceNoteReminder],
-        activeFocusSession: FocusSession?
+        activeFocusSession: FocusSession?,
+        userID: String?
     ) -> [ActivityItem] {
         var events: [RecentActivityEvent] = []
 
         events.append(contentsOf: voiceNotes.map(makeVoiceNoteEvent))
         events.append(contentsOf: reminders.map(makeReminderEvent))
+        events.append(contentsOf: RecentActivityStore.shared.events(for: userID).map(makeStoredEvent))
 
         if let activeFocusSession {
             events.append(makeFocusEvent(from: activeFocusSession))
@@ -65,6 +67,19 @@ struct RecentActivityService: Sendable {
                 title: session.title,
                 subtitle: "Focus active until \(session.endsAt.formatted(date: .omitted, time: .shortened))",
                 time: relativeTimestamp(for: session.startedAt)
+            )
+        )
+    }
+
+    private func makeStoredEvent(from event: StoredRecentActivityEvent) -> RecentActivityEvent {
+        RecentActivityEvent(
+            date: event.date,
+            item: ActivityItem(
+                icon: event.icon,
+                colorAssetName: event.colorAssetName,
+                title: event.title,
+                subtitle: event.subtitle,
+                time: relativeTimestamp(for: event.date)
             )
         )
     }

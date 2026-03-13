@@ -7,12 +7,12 @@
 
 import Foundation
 
-struct NexaCommand: Codable {
+struct NexaCommand: Codable, Sendable {
     let action: NexaAction
     let parameters: NexaParameters
 }
 
-enum NexaAction: String, Codable {
+enum NexaAction: String, Codable, Sendable {
     case createVoiceNote = "create_voice_note"
     case openAIChat = "open_ai_chat"
     case startFocusSession = "start_focus_session"
@@ -22,7 +22,7 @@ enum NexaAction: String, Codable {
     case unknown
 }
 
-struct NexaParameters: Codable {
+struct NexaParameters: Codable, Sendable {
     var content: String?
     var message: String?
     var contact: String?
@@ -30,37 +30,33 @@ struct NexaParameters: Codable {
     var title: String?
     var durationMinutes: Int?
     var preset: String?
+
+    init(
+        content: String? = nil,
+        message: String? = nil,
+        contact: String? = nil,
+        tab: String? = nil,
+        title: String? = nil,
+        durationMinutes: Int? = nil,
+        preset: String? = nil
+    ) {
+        self.content = content
+        self.message = message
+        self.contact = contact
+        self.tab = tab
+        self.title = title
+        self.durationMinutes = durationMinutes
+        self.preset = preset
+    }
 }
 
 struct NexaAssistantService: Sendable {
     static let shared = NexaAssistantService()
-
-    private let groqURL = "https://api.groq.com/openai/v1/chat/completions"
-    private let apiKey = "tvoj_groq_api_key"
-
-    private let systemPrompt = """
-    You are Nexa, a voice assistant inside NexaDemo app.
-    Parse user voice commands and return ONLY valid JSON, no explanation, no markdown.
-
-    Supported actions:
-    - create_voice_note: { "action": "create_voice_note", "parameters": { "content": "note text" } }
-    - open_ai_chat: { "action": "open_ai_chat", "parameters": { "message": "initial message" } }
-    - start_focus_session: { "action": "start_focus_session", "parameters": { "title": "Study Focus", "durationMinutes": 40, "preset": "study" } }
-    - start_scan: { "action": "start_scan", "parameters": {} }
-    - make_call: { "action": "make_call", "parameters": { "contact": "contact name" } }
-    - navigate: { "action": "navigate", "parameters": { "tab": "home|ai|premium|connect|profile" } }
-    - unknown: { "action": "unknown", "parameters": {} }
-
-    Examples:
-    "Create a voice note reminder to call doctor tomorrow" -> { "action": "create_voice_note", "parameters": { "content": "Reminder to call doctor tomorrow" } }
-    "Open AI chat and ask about SwiftUI" -> { "action": "open_ai_chat", "parameters": { "message": "Tell me about SwiftUI" } }
-    "I need to study for 40 minutes" -> { "action": "start_focus_session", "parameters": { "title": "Study Focus", "durationMinutes": 40, "preset": "study" } }
-    "Scan something" -> { "action": "start_scan", "parameters": {} }
-    "Call Alex" -> { "action": "make_call", "parameters": { "contact": "Alex" } }
-    "Go to profile" -> { "action": "navigate", "parameters": { "tab": "profile" } }
-    """
+    private let client = NetworkClient.shared
 
     func parseCommand(_ transcript: String) async throws -> NexaCommand {
+        let trimmedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+
         if let proposal = FocusAIParserService().proposal(for: transcript) {
             return NexaCommand(
                 action: .startFocusSession,
@@ -72,7 +68,11 @@ struct NexaAssistantService: Sendable {
             )
         }
 
-        var request = URLRequest(url: URL(string: "https:// nexademo-backend-production.up.railway.app/api/nexa/parse")!)
+        if let localIntent = localIntentCommand(for: trimmedTranscript) {
+            return localIntent
+        }
+
+        var request = URLRequest(url: client.url(for: "nexa/parse"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
@@ -84,14 +84,163 @@ struct NexaAssistantService: Sendable {
 
         request.httpBody = try JSONEncoder().encode(["transcript": transcript])
 
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw NexaError.serverError
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                if let fallback = fallbackCommand(for: trimmedTranscript) {
+                    return fallback
+                }
+                throw NexaError.serverError
+            }
+
+            print("Nexa response: \(String(data: data, encoding: .utf8) ?? "nil")")
+            let command = try JSONDecoder().decode(NexaCommand.self, from: data)
+            return resolvedCommand(command, transcript: trimmedTranscript)
+        } catch {
+            if let fallback = fallbackCommand(for: trimmedTranscript) {
+                return fallback
+            }
+            throw error
+        }
+    }
+
+    private func resolvedCommand(_ command: NexaCommand, transcript: String) -> NexaCommand {
+        switch command.action {
+        case .createVoiceNote:
+            let content = normalized(command.parameters.content) ?? extractedVoiceNoteContent(from: transcript)
+            return NexaCommand(action: .createVoiceNote, parameters: NexaParameters(content: content))
+        case .openAIChat:
+            let message = normalized(command.parameters.message) ?? transcript
+            return NexaCommand(action: .openAIChat, parameters: NexaParameters(message: message))
+        case .makeCall:
+            let contact = normalized(command.parameters.contact) ?? extractedContactName(from: transcript)
+            return NexaCommand(action: .makeCall, parameters: NexaParameters(contact: contact))
+        case .navigate:
+            if let fallback = fallbackCommand(for: transcript) {
+                return fallback
+            }
+            return command
+        case .unknown:
+            return fallbackCommand(for: transcript) ?? command
+        case .startFocusSession, .startScan:
+            return command
+        }
+    }
+
+    private func fallbackCommand(for transcript: String) -> NexaCommand? {
+        localIntentCommand(for: transcript)
+    }
+
+    private func localIntentCommand(for transcript: String) -> NexaCommand? {
+        if let content = extractedVoiceNoteContent(from: transcript) {
+            return NexaCommand(
+                action: .createVoiceNote,
+                parameters: NexaParameters(content: content)
+            )
         }
 
-        print("Nexa response: \(String(data: data, encoding: .utf8) ?? "nil")")
-        return try JSONDecoder().decode(NexaCommand.self, from: data)
+        if let contact = extractedContactName(from: transcript) {
+            return NexaCommand(
+                action: .makeCall,
+                parameters: NexaParameters(contact: contact)
+            )
+        }
+
+        if shouldOpenAIChat(for: transcript) {
+            return NexaCommand(
+                action: .openAIChat,
+                parameters: NexaParameters(message: transcript)
+            )
+        }
+
+        return nil
+    }
+
+    private func normalized(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              trimmed.isEmpty == false else {
+            return nil
+        }
+        return trimmed
+    }
+
+    private func extractedVoiceNoteContent(from transcript: String) -> String? {
+        let prefixes = [
+            "create a voice note",
+            "create voice note",
+            "make a voice note",
+            "make voice note",
+            "record a voice note",
+            "record voice note",
+            "take a voice note",
+            "take voice note"
+        ]
+
+        return extractedSuffix(from: transcript, prefixes: prefixes)
+    }
+
+    private func extractedContactName(from transcript: String) -> String? {
+        let prefixes = [
+            "call to",
+            "call"
+        ]
+
+        return extractedSuffix(from: transcript, prefixes: prefixes)
+    }
+
+    private func extractedSuffix(from transcript: String, prefixes: [String]) -> String? {
+        let trimmedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let loweredTranscript = trimmedTranscript.lowercased()
+
+        for prefix in prefixes {
+            guard loweredTranscript.hasPrefix(prefix) else { continue }
+            let offset = prefix.count
+            let startIndex = trimmedTranscript.index(trimmedTranscript.startIndex, offsetBy: offset)
+            let suffix = trimmedTranscript[startIndex...]
+                .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(.punctuationCharacters))
+
+            if suffix.isEmpty == false {
+                return suffix
+            }
+        }
+
+        return nil
+    }
+
+    private func shouldOpenAIChat(for transcript: String) -> Bool {
+        let trimmedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let loweredTranscript = trimmedTranscript.lowercased()
+
+        if trimmedTranscript.hasSuffix("?") {
+            return true
+        }
+
+        let informativePrefixes = [
+            "can you tell me",
+            "can you tell me more",
+            "can you tell me more about",
+            "tell me",
+            "tell me about",
+            "tell me more",
+            "tell me more about",
+            "what is",
+            "what are",
+            "how do",
+            "how does",
+            "how can",
+            "why is",
+            "why are",
+            "who is",
+            "when is",
+            "where is",
+            "explain",
+            "help me understand",
+            "can you explain",
+            "ask ai"
+        ]
+
+        return informativePrefixes.contains { loweredTranscript.hasPrefix($0) }
     }
 }
 

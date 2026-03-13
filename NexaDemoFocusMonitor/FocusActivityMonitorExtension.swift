@@ -6,6 +6,7 @@ import ManagedSettings
 final class FocusActivityMonitorExtension: DeviceActivityMonitor {
     private let defaults = UserDefaults(suiteName: "group.com.codify.nexademo")
     private let storageKey = "focus_session_state"
+    private let cleanupKey = "focus_session_live_activity_cleanup"
     private let store = ManagedSettingsStore(named: .init("FocusSession"))
 
     override func intervalDidEnd(for activity: DeviceActivityName) {
@@ -17,6 +18,7 @@ final class FocusActivityMonitorExtension: DeviceActivityMonitor {
 
         store.clearAllSettings()
         defaults?.removeObject(forKey: storageKey)
+        defaults?.set(true, forKey: cleanupKey)
         endFocusActivities()
     }
 

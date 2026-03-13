@@ -13,7 +13,7 @@ struct FocusAIParserService: Sendable {
         let preset = detectedPreset(in: normalized)
         let durationMinutes = detectedDuration(in: normalized) ?? defaultDuration(for: preset)
 
-        guard isFocusIntent(normalized) || detectedPreset(in: normalized) != .custom else {
+        guard isFocusIntent(normalized) else {
             return nil
         }
 
@@ -57,7 +57,12 @@ struct FocusAIParserService: Sendable {
             return .reading
         }
 
-        if normalized.localizedStandardContains("call") || normalized.localizedStandardContains("meeting") {
+        if normalized.localizedStandardContains("call prep")
+            || normalized.localizedStandardContains("meeting prep")
+            || normalized.localizedStandardContains("prepare for a call")
+            || normalized.localizedStandardContains("prepare for call")
+            || normalized.localizedStandardContains("prepare for a meeting")
+            || normalized.localizedStandardContains("prepare for meeting") {
             return .callPrep
         }
 

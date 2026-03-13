@@ -9,6 +9,7 @@ import SwiftUI
 import AVFoundation
 
 struct CameraMLView: View {
+    @Environment(AuthViewModel.self) private var authVM
     @Environment(AppSheetManager.self) private var sheetManager
     let viewModel: AIStudioViewModel  // ← prima izvana
     @State private var cameraService = CameraService()
@@ -79,7 +80,8 @@ struct CameraMLView: View {
                         // Upiši rezultate u viewmodel i zatvori
                         viewModel.updateResults(
                             objects: cameraService.detectedObjects,
-                            image: cameraService.capturedImage
+                            image: cameraService.capturedImage,
+                            userID: authVM.currentUser?.id
                         )
                         await cameraService.stopSession()
                         sheetManager.dismissFullScreen()
