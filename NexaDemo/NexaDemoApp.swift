@@ -10,6 +10,7 @@ struct NexaDemoApp: App {
     @State private var alarmLaunchRouter = AlarmLaunchRouter()
     @State private var rcService = RevenueCatService()
     @State private var focusSessionStore = FocusSessionStore()
+    @State private var nexaPlacesCoordinator = NexaPlacesCoordinator()
 
     var body: some Scene {
         WindowGroup {
@@ -20,6 +21,7 @@ struct NexaDemoApp: App {
                 .environment(alarmLaunchRouter)
                 .environment(rcService)
                 .environment(focusSessionStore)
+                .environment(nexaPlacesCoordinator)
                 .modelContainer(for: [VoiceNote.self, VoiceNoteReminder.self])
         }
     }

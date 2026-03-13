@@ -65,6 +65,7 @@ struct HomeView: View {
                             )
                         },
                         onAIChat: { homeRouter.push(.aiChat) },
+                        onNexaPlaces: { homeRouter.push(.nexaPlaces(query: nil)) },
                         onCall: { tabRouter.openConnect(.contactDetail("demo")) },
                         onVoiceNote: { tabRouter.openProfile(.voiceNotes) }
                     )

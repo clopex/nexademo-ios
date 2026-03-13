@@ -13,6 +13,7 @@ enum HomeRoute: Hashable {
     case notifications
     case aiChat
     case focusSession(FocusSessionProposal)
+    case nexaPlaces(query: String?)
 }
 
 enum AIRoute: Hashable {
@@ -216,6 +217,8 @@ struct HomeFlowView: View {
                     case .aiChat: AIChatView()
                     case .focusSession(let proposal):
                         FocusSessionProposalView(proposal: proposal)
+                    case .nexaPlaces(let query):
+                        NexaPlacesView(initialQuery: query)
                     }
                 }
         }

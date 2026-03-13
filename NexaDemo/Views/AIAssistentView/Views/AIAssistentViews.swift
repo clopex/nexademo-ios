@@ -87,6 +87,7 @@ struct NexaAssistantView: View {
     @Binding var isPresented: Bool
     @Environment(AuthViewModel.self) private var authVM
     @Environment(AppTabRouter.self) private var tabRouter
+    @Environment(NexaPlacesCoordinator.self) private var nexaPlacesCoordinator
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = NexaAssistantViewModel()
     @State private var bars: [CGFloat] = Array(repeating: 0.3, count: 20)
@@ -167,6 +168,7 @@ struct NexaAssistantView: View {
                 exampleChip("🎤 Create a voice note")
                 exampleChip("🤖 Ask AI about SwiftUI")
                 exampleChip("🧠 Start a 40 minute study focus")
+                exampleChip("📍 Find coffee shops near me")
                 exampleChip("📞 Call Alex")
             }
 
@@ -412,11 +414,24 @@ struct NexaAssistantView: View {
             case .makeCall:
                 tabRouter.openConnect()
 
+            case .searchPlaces:
+                if nexaPlacesCoordinator.isVisible {
+                    nexaPlacesCoordinator.submit(query: command.parameters.query)
+                } else {
+                    tabRouter.openHome(.nexaPlaces(query: command.parameters.query))
+                }
+
             case .navigate:
                 if let tab = command.parameters.tab {
                     switch tab {
                     case "home": tabRouter.openHome()
                     case "ai": tabRouter.openAI()
+                    case "places":
+                        if nexaPlacesCoordinator.isVisible {
+                            nexaPlacesCoordinator.submit(query: command.parameters.query)
+                        } else {
+                            tabRouter.openHome(.nexaPlaces(query: command.parameters.query))
+                        }
                     case "premium": tabRouter.selectedTab = .premium
                     case "connect": tabRouter.openConnect()
                     case "profile": tabRouter.openProfile()
@@ -550,6 +565,7 @@ extension NexaAction {
         case .startFocusSession: return "Preparing Focus Session"
         case .startScan: return "Starting AI Scanner"
         case .makeCall: return "Making a Call"
+        case .searchPlaces: return "Searching Places"
         case .navigate: return "Navigating"
         case .unknown: return "Unknown Command"
         }
@@ -565,7 +581,12 @@ extension NexaAction {
             return "\(title) for \(duration) minutes"
         case .startScan: return "Opening AI camera"
         case .makeCall: return "Calling \(params.contact ?? "contact")"
-        case .navigate: return "Go to \(params.tab ?? "tab")"
+        case .searchPlaces: return params.query ?? "Search nearby places"
+        case .navigate:
+            if params.tab == "places" {
+                return params.query ?? "Open Nexa Places"
+            }
+            return "Go to \(params.tab ?? "tab")"
         case .unknown: return "Couldn't parse command"
         }
     }

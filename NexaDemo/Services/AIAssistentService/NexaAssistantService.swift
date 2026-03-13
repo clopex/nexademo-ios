@@ -18,6 +18,7 @@ enum NexaAction: String, Codable, Sendable {
     case startFocusSession = "start_focus_session"
     case startScan = "start_scan"
     case makeCall = "make_call"
+    case searchPlaces = "search_places"
     case navigate = "navigate"
     case unknown
 }
@@ -25,6 +26,7 @@ enum NexaAction: String, Codable, Sendable {
 struct NexaParameters: Codable, Sendable {
     var content: String?
     var message: String?
+    var query: String?
     var contact: String?
     var tab: String?
     var title: String?
@@ -34,6 +36,7 @@ struct NexaParameters: Codable, Sendable {
     init(
         content: String? = nil,
         message: String? = nil,
+        query: String? = nil,
         contact: String? = nil,
         tab: String? = nil,
         title: String? = nil,
@@ -42,6 +45,7 @@ struct NexaParameters: Codable, Sendable {
     ) {
         self.content = content
         self.message = message
+        self.query = query
         self.contact = contact
         self.tab = tab
         self.title = title
@@ -116,7 +120,18 @@ struct NexaAssistantService: Sendable {
         case .makeCall:
             let contact = normalized(command.parameters.contact) ?? extractedContactName(from: transcript)
             return NexaCommand(action: .makeCall, parameters: NexaParameters(contact: contact))
+        case .searchPlaces:
+            return NexaCommand(
+                action: .searchPlaces,
+                parameters: NexaParameters(query: normalized(command.parameters.query) ?? normalized(command.parameters.message) ?? transcript)
+            )
         case .navigate:
+            if command.parameters.tab == "places" {
+                return NexaCommand(
+                    action: .navigate,
+                    parameters: NexaParameters(query: normalized(command.parameters.query) ?? normalized(command.parameters.message) ?? transcript, tab: "places")
+                )
+            }
             if let fallback = fallbackCommand(for: transcript) {
                 return fallback
             }
@@ -133,6 +148,13 @@ struct NexaAssistantService: Sendable {
     }
 
     private func localIntentCommand(for transcript: String) -> NexaCommand? {
+        if shouldOpenPlaces(for: transcript) {
+            return NexaCommand(
+                action: .navigate,
+                parameters: NexaParameters(query: transcript, tab: "places")
+            )
+        }
+
         if let content = extractedVoiceNoteContent(from: transcript) {
             return NexaCommand(
                 action: .createVoiceNote,
@@ -241,6 +263,47 @@ struct NexaAssistantService: Sendable {
         ]
 
         return informativePrefixes.contains { loweredTranscript.hasPrefix($0) }
+    }
+
+    private func shouldOpenPlaces(for transcript: String) -> Bool {
+        let loweredTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let prefixes = [
+            "find ",
+            "find me ",
+            "show ",
+            "show me ",
+            "search for ",
+            "look for ",
+            "locate "
+        ]
+        let categories = [
+            "coffee",
+            "coffee shop",
+            "coffee shops",
+            "cafe",
+            "cafes",
+            "gym",
+            "gyms",
+            "restaurant",
+            "restaurants",
+            "pharmacy",
+            "pharmacies",
+            "hotel",
+            "hotels"
+        ]
+        let locationTerms = [
+            "near me",
+            "around me",
+            "nearby",
+            "close by",
+            "in my area"
+        ]
+
+        let matchesPrefix = prefixes.contains { loweredTranscript.hasPrefix($0) }
+        let matchesCategory = categories.contains { loweredTranscript.localizedStandardContains($0) }
+        let matchesLocation = locationTerms.contains { loweredTranscript.localizedStandardContains($0) }
+
+        return matchesPrefix && (matchesCategory || matchesLocation)
     }
 }
 
