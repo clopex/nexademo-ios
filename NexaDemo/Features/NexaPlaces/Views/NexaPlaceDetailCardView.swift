@@ -2,8 +2,10 @@ import SwiftUI
 
 struct NexaPlaceDetailCardView: View {
     let result: NexaPlaceSearchResult
+    let isAddingToWallet: Bool
     let onRoute: () -> Void
     let onOpenInMaps: () -> Void
+    let onAddToWallet: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -34,9 +36,14 @@ struct NexaPlaceDetailCardView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(Color("BrandAccent"))
 
-                Button("Open in Maps", systemImage: "map", action: onOpenInMaps)
+                Button("Maps", systemImage: "map", action: onOpenInMaps)
                     .buttonStyle(.bordered)
                     .tint(.white)
+
+                Button(isAddingToWallet ? "Adding..." : "Wallet", systemImage: "wallet.pass", action: onAddToWallet)
+                    .buttonStyle(.bordered)
+                    .tint(Color("SuccessAccent"))
+                    .disabled(isAddingToWallet)
             }
         }
         .padding(18)

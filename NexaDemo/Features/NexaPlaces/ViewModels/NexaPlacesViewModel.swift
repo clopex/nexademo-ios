@@ -2,6 +2,7 @@ import CoreLocation
 import Foundation
 import MapKit
 import Observation
+import PassKit
 import SwiftUI
 
 @Observable
@@ -14,11 +15,15 @@ final class NexaPlacesViewModel {
     var selectedResult: NexaPlaceSearchResult?
     var errorMessage: String?
     var locationStatus: CLAuthorizationStatus = .notDetermined
+    var isAddingToWallet = false
+    var walletPass: PKPass?
+    var walletErrorMessage: String?
 
     private let initialQuery: String?
     private let intentParser = NexaPlacesIntentParser()
     private let locationService = NexaPlacesLocationService()
     private let searchService = NexaPlacesSearchService()
+    private let walletPassService = NexaPlacesWalletPassService()
     private var userLocation: CLLocation?
     private var activeRegion: MKCoordinateRegion?
     private var hasCenteredOnUser = false
@@ -119,6 +124,30 @@ final class NexaPlacesViewModel {
     func openInMaps() {
         guard let selectedResult else { return }
         searchService.openInMaps(selectedResult)
+    }
+
+    func addSelectedPlaceToWallet() async {
+        guard let selectedResult, isAddingToWallet == false else { return }
+
+        isAddingToWallet = true
+        walletErrorMessage = nil
+        let requestBody = NexaPlaceWalletPassRequest(result: selectedResult)
+
+        do {
+            walletPass = try await walletPassService.fetchPass(for: requestBody)
+        } catch {
+            walletErrorMessage = error.localizedDescription
+        }
+
+        isAddingToWallet = false
+    }
+
+    func clearWalletPass() {
+        walletPass = nil
+    }
+
+    func clearWalletError() {
+        walletErrorMessage = nil
     }
 
     func stop() {}

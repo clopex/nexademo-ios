@@ -80,9 +80,15 @@ struct NexaPlacesView: View {
             NexaPlacesResultsPanelView(
                 results: viewModel.results,
                 selectedResult: viewModel.selectedResult,
+                isAddingToWallet: viewModel.isAddingToWallet,
                 onSelect: viewModel.select,
                 onRoute: viewModel.openDirections,
-                onOpenInMaps: viewModel.openInMaps
+                onOpenInMaps: viewModel.openInMaps,
+                onAddToWallet: {
+                    Task {
+                        await viewModel.addSelectedPlaceToWallet()
+                    }
+                }
             )
         }
         .task {
@@ -100,5 +106,41 @@ struct NexaPlacesView: View {
             coordinator.isVisible = false
             viewModel.stop()
         }
+        .sheet(isPresented: walletSheetIsPresented) {
+            if let walletPass = viewModel.walletPass {
+                NexaPlaceWalletAddSheet(pass: walletPass) {
+                    viewModel.clearWalletPass()
+                }
+            }
+        }
+        .alert("Wallet", isPresented: walletErrorIsPresented) {
+            Button("OK", role: .cancel) {
+                viewModel.clearWalletError()
+            }
+        } message: {
+            Text(viewModel.walletErrorMessage ?? "Something went wrong while preparing the Wallet pass.")
+        }
+    }
+
+    private var walletSheetIsPresented: Binding<Bool> {
+        Binding(
+            get: { viewModel.walletPass != nil },
+            set: { isPresented in
+                if isPresented == false {
+                    viewModel.clearWalletPass()
+                }
+            }
+        )
+    }
+
+    private var walletErrorIsPresented: Binding<Bool> {
+        Binding(
+            get: { viewModel.walletErrorMessage != nil },
+            set: { isPresented in
+                if isPresented == false {
+                    viewModel.clearWalletError()
+                }
+            }
+        )
     }
 }

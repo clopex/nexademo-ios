@@ -3,9 +3,11 @@ import SwiftUI
 struct NexaPlacesResultsPanelView: View {
     let results: [NexaPlaceSearchResult]
     let selectedResult: NexaPlaceSearchResult?
+    let isAddingToWallet: Bool
     let onSelect: (NexaPlaceSearchResult) -> Void
     let onRoute: () -> Void
     let onOpenInMaps: () -> Void
+    let onAddToWallet: () -> Void
 
     var body: some View {
         VStack(spacing: 12) {
@@ -29,8 +31,10 @@ struct NexaPlacesResultsPanelView: View {
             if let selectedResult {
                 NexaPlaceDetailCardView(
                     result: selectedResult,
+                    isAddingToWallet: isAddingToWallet,
                     onRoute: onRoute,
-                    onOpenInMaps: onOpenInMaps
+                    onOpenInMaps: onOpenInMaps,
+                    onAddToWallet: onAddToWallet
                 )
                 .padding(.horizontal, 16)
                 .transition(.move(edge: .bottom).combined(with: .scale(scale: 0.96)).combined(with: .opacity))

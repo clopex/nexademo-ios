@@ -53,6 +53,10 @@ struct NetworkClient: Sendable {
         _ = try await performRequestData(request)
     }
 
+    func performDataRequest(_ request: URLRequest) async throws -> Data {
+        try await performRequestData(request)
+    }
+
     private func performRequestData(_ request: URLRequest) async throws -> Data {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
