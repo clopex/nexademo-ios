@@ -7,7 +7,7 @@ struct NexaPlacesResultsPanelView: View {
     let onSelect: (NexaPlaceSearchResult) -> Void
     let onRoute: () -> Void
     let onOpenInMaps: () -> Void
-    let onAddToWallet: () -> Void
+    let onPlanVisit: () -> Void
 
     var body: some View {
         VStack(spacing: 12) {
@@ -34,7 +34,7 @@ struct NexaPlacesResultsPanelView: View {
                     isAddingToWallet: isAddingToWallet,
                     onRoute: onRoute,
                     onOpenInMaps: onOpenInMaps,
-                    onAddToWallet: onAddToWallet
+                    onPlanVisit: onPlanVisit
                 )
                 .padding(.horizontal, 16)
                 .transition(.move(edge: .bottom).combined(with: .scale(scale: 0.96)).combined(with: .opacity))

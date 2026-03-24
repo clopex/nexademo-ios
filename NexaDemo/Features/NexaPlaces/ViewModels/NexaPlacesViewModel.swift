@@ -126,12 +126,22 @@ final class NexaPlacesViewModel {
         searchService.openInMaps(selectedResult)
     }
 
-    func addSelectedPlaceToWallet() async {
-        guard let selectedResult, isAddingToWallet == false else { return }
+    func addVisitPlanToWallet(
+        for result: NexaPlaceSearchResult,
+        title: String,
+        scheduledAt: Date,
+        note: String
+    ) async {
+        guard isAddingToWallet == false else { return }
 
         isAddingToWallet = true
         walletErrorMessage = nil
-        let requestBody = NexaPlaceWalletPassRequest(result: selectedResult)
+        let requestBody = NexaPlaceWalletPassRequest(
+            result: result,
+            planTitle: title,
+            scheduledAt: scheduledAt,
+            note: note
+        )
 
         do {
             walletPass = try await walletPassService.fetchPass(for: requestBody)

@@ -9,8 +9,13 @@ struct NexaPlaceWalletPassRequest: Encodable, Sendable {
     let longitude: Double
     let phoneNumber: String?
     let appLaunchURL: String?
+    let planTitle: String
+    let scheduledAt: String
+    let scheduledDateText: String
+    let scheduledTimeText: String
+    let note: String?
 
-    init(result: NexaPlaceSearchResult) {
+    init(result: NexaPlaceSearchResult, planTitle: String, scheduledAt: Date, note: String) {
         name = result.name
         address = result.address
         categoryName = result.categoryName
@@ -18,6 +23,11 @@ struct NexaPlaceWalletPassRequest: Encodable, Sendable {
         longitude = result.coordinate.longitude
         phoneNumber = result.phoneNumber
         appLaunchURL = Self.makeAppLaunchURL(for: result)?.absoluteString
+        self.planTitle = planTitle
+        self.scheduledAt = Self.iso8601Formatter.string(from: scheduledAt)
+        scheduledDateText = scheduledAt.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
+        scheduledTimeText = scheduledAt.formatted(.dateTime.hour().minute())
+        self.note = note.isEmpty ? nil : note
     }
 
     private static func makeAppLaunchURL(for result: NexaPlaceSearchResult) -> URL? {
@@ -29,4 +39,10 @@ struct NexaPlaceWalletPassRequest: Encodable, Sendable {
         ]
         return components.url
     }
+
+    private static let iso8601Formatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
 }

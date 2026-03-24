@@ -5,6 +5,7 @@ struct NexaPlacesView: View {
     @Environment(NexaPlacesCoordinator.self) private var coordinator
     @State private var viewModel: NexaPlacesViewModel
     @State private var isHeaderVisible = true
+    @State private var visitPlanDraft: NexaPlaceVisitPlanDraft?
 
     init(initialQuery: String?) {
         _viewModel = State(initialValue: NexaPlacesViewModel(initialQuery: initialQuery))
@@ -84,10 +85,9 @@ struct NexaPlacesView: View {
                 onSelect: viewModel.select,
                 onRoute: viewModel.openDirections,
                 onOpenInMaps: viewModel.openInMaps,
-                onAddToWallet: {
-                    Task {
-                        await viewModel.addSelectedPlaceToWallet()
-                    }
+                onPlanVisit: {
+                    guard let selectedResult = viewModel.selectedResult else { return }
+                    visitPlanDraft = NexaPlaceVisitPlanDraft(result: selectedResult)
                 }
             )
         }
@@ -110,6 +110,18 @@ struct NexaPlacesView: View {
             if let walletPass = viewModel.walletPass {
                 NexaPlaceWalletAddSheet(pass: walletPass) {
                     viewModel.clearWalletPass()
+                }
+            }
+        }
+        .sheet(item: $visitPlanDraft) { draft in
+            NexaPlaceVisitPlanSheet(draft: draft) { title, scheduledAt, note in
+                Task {
+                    await viewModel.addVisitPlanToWallet(
+                        for: draft.result,
+                        title: title,
+                        scheduledAt: scheduledAt,
+                        note: note
+                    )
                 }
             }
         }

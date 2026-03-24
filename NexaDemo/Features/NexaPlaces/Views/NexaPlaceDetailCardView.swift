@@ -5,7 +5,7 @@ struct NexaPlaceDetailCardView: View {
     let isAddingToWallet: Bool
     let onRoute: () -> Void
     let onOpenInMaps: () -> Void
-    let onAddToWallet: () -> Void
+    let onPlanVisit: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -40,7 +40,7 @@ struct NexaPlaceDetailCardView: View {
                     .buttonStyle(.bordered)
                     .tint(.white)
 
-                Button(isAddingToWallet ? "Adding..." : "Wallet", systemImage: "wallet.pass", action: onAddToWallet)
+                Button(isAddingToWallet ? "Adding..." : "Plan", systemImage: "wallet.pass", action: onPlanVisit)
                     .buttonStyle(.bordered)
                     .tint(Color("SuccessAccent"))
                     .disabled(isAddingToWallet)
