@@ -7,6 +7,7 @@ import LocalAuthentication
 final class AuthViewModel {
     private static let pendingProfileSetupUserIDsKey = "pendingProfileSetupUserIDs"
     private static let completedProfileSetupUserIDsKey = "completedProfileSetupUserIDs"
+    private static let cachedUserKey = "cachedAuthUser"
 
     var currentUser: User?
     var isLoggedIn = false
@@ -85,15 +86,9 @@ final class AuthViewModel {
     func loadCurrentUser() async {
         do {
             let user = try await AuthService.shared.getMe()
-            currentUser = user
-            isLoggedIn = true
-            needsProfileSetup = isProfileSetupPending(for: user.id)
+            applyAuthenticatedUser(user)
         } catch {
-            await KeychainService.shared.deleteToken()
-            BiometricAuthService.setLoginPending(false)
-            currentUser = nil
-            isLoggedIn = false
-            needsProfileSetup = false
+            await handleSessionLoadFailure(error)
         }
 
         await refreshBiometricLoginAvailability()
@@ -108,7 +103,7 @@ final class AuthViewModel {
                 throw BiometricAuthError.biometricDisabled
             }
 
-            guard await KeychainService.shared.getToken() != nil else {
+            guard await KeychainService.shared.hasSession() else {
                 throw BiometricAuthError.missingToken
             }
 
@@ -137,8 +132,8 @@ final class AuthViewModel {
     }
 
     func refreshBiometricLoginAvailability() async {
-        let hasToken = await KeychainService.shared.getToken() != nil
-        isBiometricLoginAvailable = BiometricAuthService.isEnabled() && hasToken
+        let hasSession = await KeychainService.shared.hasSession()
+        isBiometricLoginAvailable = BiometricAuthService.isEnabled() && hasSession
     }
 
     func logout() async {
@@ -149,7 +144,8 @@ final class AuthViewModel {
             isBiometricLoginAvailable = true
         } else {
             isBiometricLoginAvailable = false
-            await KeychainService.shared.deleteToken()
+            await KeychainService.shared.deleteSession()
+            clearCachedUser()
         }
 
         currentUser = nil
@@ -160,14 +156,15 @@ final class AuthViewModel {
     private func launchSequence(shouldClear: Bool) async {
         isBootstrapping = true
         if shouldClear {
-            await KeychainService.shared.deleteToken()
+            await KeychainService.shared.deleteSession()
             BiometricAuthService.setLoginPending(false)
+            clearCachedUser()
         }
 
-        let hasToken = await KeychainService.shared.getToken() != nil
-        isBiometricLoginAvailable = BiometricAuthService.isEnabled() && hasToken
+        let hasSession = await KeychainService.shared.hasSession()
+        isBiometricLoginAvailable = BiometricAuthService.isEnabled() && hasSession
 
-        guard hasToken else {
+        guard hasSession else {
             currentUser = nil
             isLoggedIn = false
             needsProfileSetup = false
@@ -195,12 +192,11 @@ final class AuthViewModel {
     }
     
     private func beginAuthenticatedSession(with response: AuthResponse, requiresProfileSetup: Bool) async {
-        await KeychainService.shared.saveToken(response.token)
+        await KeychainService.shared.saveSession(token: response.token, refreshToken: response.refreshToken)
         BiometricAuthService.setLoginPending(false)
 
         let user = await loadCanonicalUser(fallback: response.user)
-        currentUser = user
-        isLoggedIn = true
+        applyAuthenticatedUser(user)
         if requiresProfileSetup && hasCompletedProfileSetup(for: user.id) == false {
             markProfileSetupPending(for: user.id)
         }
@@ -216,6 +212,51 @@ final class AuthViewModel {
             return fallbackUser
         }
     }
+
+    private func applyAuthenticatedUser(_ user: User) {
+        currentUser = user
+        isLoggedIn = true
+        needsProfileSetup = isProfileSetupPending(for: user.id)
+        cacheUser(user)
+    }
+
+    private func shouldInvalidateSession(for error: Error) -> Bool {
+        guard let networkError = error as? NetworkClientError else {
+            return false
+        }
+
+        switch networkError {
+        case .missingToken:
+            return true
+        case .serverError(let statusCode, _):
+            return statusCode == 401 || statusCode == 403
+        default:
+            return false
+        }
+    }
+
+    private func handleSessionLoadFailure(_ error: Error) async {
+        if shouldInvalidateSession(for: error) {
+            await KeychainService.shared.deleteSession()
+            BiometricAuthService.setLoginPending(false)
+            clearCachedUser()
+            currentUser = nil
+            isLoggedIn = false
+            needsProfileSetup = false
+            return
+        }
+
+        if let cachedUser = cachedUser() {
+            currentUser = cachedUser
+            isLoggedIn = true
+            needsProfileSetup = isProfileSetupPending(for: cachedUser.id)
+            return
+        }
+
+        currentUser = nil
+        isLoggedIn = false
+        needsProfileSetup = false
+    }
     
     private func isProfileSetupPending(for userID: String) -> Bool {
         pendingProfileSetupUserIDs().contains(userID)
@@ -226,6 +267,26 @@ final class AuthViewModel {
             return nil
         }
         return trimmed
+    }
+
+    private func cachedUser() -> User? {
+        guard let data = UserDefaults.standard.data(forKey: Self.cachedUserKey) else {
+            return nil
+        }
+
+        return try? JSONDecoder().decode(User.self, from: data)
+    }
+
+    private func cacheUser(_ user: User) {
+        guard let data = try? JSONEncoder().encode(user) else {
+            return
+        }
+
+        UserDefaults.standard.set(data, forKey: Self.cachedUserKey)
+    }
+
+    private func clearCachedUser() {
+        UserDefaults.standard.removeObject(forKey: Self.cachedUserKey)
     }
     
     private func pendingProfileSetupUserIDs() -> Set<String> {

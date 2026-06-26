@@ -53,15 +53,51 @@ struct AuthService: Sendable {
     }
 
     func getMe() async throws -> User {
-        let url = client.url(for: "auth/me")
-        var request = URLRequest(url: url)
-        if let token = await KeychainService.shared.getToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        } else {
+        do {
+            return try await performGetMe()
+        } catch let error as NetworkClientError {
+            guard case .serverError(let statusCode, _) = error, statusCode == 401 || statusCode == 403 else {
+                throw error
+            }
+
+            _ = try await refreshSession()
+            return try await performGetMe()
+        }
+    }
+
+    func refreshSession() async throws -> AuthResponse {
+        guard let refreshToken = await KeychainService.shared.getRefreshToken() else {
             throw NetworkClientError.missingToken
         }
 
+        let url = client.url(for: "auth/refresh")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(
+            RefreshTokenRequest(refreshToken: refreshToken)
+        )
+
+        let response: AuthResponse = try await client.performRequest(request)
+        await KeychainService.shared.saveSession(token: response.token, refreshToken: response.refreshToken)
+        return response
+    }
+
+    private func performGetMe() async throws -> User {
+        let url = client.url(for: "auth/me")
+        var request = URLRequest(url: url)
+        let accessToken = try await accessToken()
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         let response: MeResponse = try await client.performRequest(request)
         return response.user
+    }
+
+    private func accessToken() async throws -> String {
+        if let token = await KeychainService.shared.getToken() {
+            return token
+        }
+
+        let response = try await refreshSession()
+        return response.token
     }
 }

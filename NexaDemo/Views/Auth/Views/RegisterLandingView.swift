@@ -4,6 +4,8 @@ import AuthenticationServices
 struct RegisterLandingView: View {
     @Environment(AuthViewModel.self) private var authVM
     @Environment(AuthRouter.self) private var authRouter
+    @State private var showToast = false
+    @State private var toast = Toast.example
 
     var body: some View {
         ZStack {
@@ -62,6 +64,25 @@ struct RegisterLandingView: View {
 
                 }
             }
+            .opacity(authVM.isLoading ? 0 : 1)
+            .accessibilityHidden(authVM.isLoading)
+
+            if authVM.isLoading {
+                LoadingOverlayView()
+                    .allowsHitTesting(true)
+            }
+        }
+        .dynamicIslandToasts(isPresented: $showToast, value: toast)
+        .onChange(of: authVM.errorMessage) { _, newValue in
+            guard let message = newValue, message.isEmpty == false else { return }
+            toast = Toast(
+                symbol: "xmark.seal.fill",
+                symbolFont: .system(size: 28),
+                symbolForegrgoundStyle: (.white, .red),
+                title: "Apple sign in failed",
+                message: message
+            )
+            showToast = true
         }
     }
 }

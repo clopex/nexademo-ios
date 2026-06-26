@@ -3,6 +3,7 @@ import Foundation
 struct AuthResponse: Codable, Sendable {
     let message: String?
     let token: String
+    let refreshToken: String?
     let user: User
 }
 
@@ -36,4 +37,8 @@ struct AppleLoginRequest: Encodable, Sendable {
     let appleId: String
     let email: String?
     let fullName: String?
+}
+
+struct RefreshTokenRequest: Encodable, Sendable {
+    let refreshToken: String
 }
